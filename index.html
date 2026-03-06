@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Universalis</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --line: #334155;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --gold: #fbbf24;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+      color: var(--text);
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.95);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button, select {
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover, select:hover {
+      filter: brightness(1.1);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .panel {
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 120px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+    }
+
+    .panel h2, .panel h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat {
+      background: #0b1220;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .map-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #map {
+      width: 100%;
+      aspect-ratio: 1.5 / 1;
+      background: linear-gradient(180deg, #082f49 0%, #0f172a 100%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 4px;
+      padding: 6px;
+    }
+
+    .province {
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      position: relative;
+      user-select: none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      overflow: hidden;
+    }
+
+    .province:hover {
+      transform: scale(1.02);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
+    }
+
+    .province.selected {
+      outline: 3px solid white;
+      z-index: 2;
+    }
+
+    .province .small {
+      position: absolute;
+      bottom: 4px;
+      left: 6px;
+      font-size: 10px;
+      opacity: 0.9;
+      font-weight: 600;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: #0b1220;
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .actions button {
+      width: 100%;
+    }
+
+    .log {
+      height: 280px;
+      overflow: auto;
+      background: #0b1220;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed rgba(148,163,184,0.18);
+    }
+
+    .faction-list, .missions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .faction-item, .mission-item {
+      background: #0b1220;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .progress {
+      height: 10px;
+      background: #111827;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
+      width: 0%;
+    }
+
+    .footer-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .good { color: var(--green); }
+    .bad { color: var(--red); }
+    .gold { color: var(--gold); }
+    .blue { color: var(--blue); }
+
+    @media (max-width: 1200px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="title">Mini Universalis</div>
+      <div class="subtitle">A very scuffed grand strategy browser game inspired by map-pain energy.</div>
+    </div>
+    <div class="top-controls">
+      <div class="badge">Date: <span id="dateLabel"></span></div>
+      <div class="badge">Speed: <span id="speedLabel">Paused</span></div>
+      <button id="pauseBtn">Pause</button>
+      <button id="playBtn">Play</button>
+      <button id="fastBtn">Fast</button>
+      <button id="saveBtn">Save</button>
+      <button id="loadBtn">Load</button>
+      <button id="resetBtn">New Game</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Your Realm</h2>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Nation</div><div class="stat-value" id="nationName"></div></div>
+        <div class="stat"><div class="stat-label">Government</div><div class="stat-value" id="government"></div></div>
+        <div class="stat"><div class="stat-label">Gold</div><div class="stat-value gold" id="gold"></div></div>
+        <div class="stat"><div class="stat-label">Manpower</div><div class="stat-value" id="manpower"></div></div>
+        <div class="stat"><div class="stat-label">Army</div><div class="stat-value" id="army"></div></div>
+        <div class="stat"><div class="stat-label">Navy</div><div class="stat-value" id="navy"></div></div>
+        <div class="stat"><div class="stat-label">Stability</div><div class="stat-value" id="stability"></div></div>
+        <div class="stat"><div class="stat-label">Prestige</div><div class="stat-value" id="prestige"></div></div>
+        <div class="stat"><div class="stat-label">Technology</div><div class="stat-value" id="tech"></div></div>
+        <div class="stat"><div class="stat-label">Owned Provinces</div><div class="stat-value" id="ownedCount"></div></div>
+      </div>
+
+      <h3 style="margin-top:14px;">Realm Actions</h3>
+      <div class="actions">
+        <button onclick="raiseArmy()">Raise Army</button>
+        <button onclick="buildShip()">Build Ship</button>
+        <button onclick="developProvince()">Develop Province</button>
+        <button onclick="researchTech()">Research Tech</button>
+        <button onclick="boostStability()">Boost Stability</button>
+        <button onclick="collectTaxes()">Collect Taxes</button>
+      </div>
+
+      <div class="footer-note">Tip: click provinces on the map, then use diplomacy or conquest buttons from the province panel.</div>
+    </div>
+
+    <div class="map-wrap">
+      <div class="panel">
+        <h2>World Map</h2>
+        <div class="badge-row" id="legend"></div>
+        <div id="map"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Event Log</h2>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Province & Diplomacy</h2>
+      <div id="provinceInfo">Select a province on the map.</div>
+
+      <h3 style="margin-top:14px;">Known Powers</h3>
+      <div class="faction-list" id="factionList"></div>
+
+      <h3 style="margin-top:14px;">Missions</h3>
+      <div class="missions" id="missions"></div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = {
+      Albion: '#3b82f6',
+      Varenne: '#ef4444',
+      Solmark: '#f59e0b',
+      Norvia: '#22c55e',
+      Esten: '#a855f7',
+      FreeCities: '#14b8a6'
+    };
+
+    const GOVERNMENTS = ['Monarchy', 'Republic', 'Merchant League', 'Duchy'];
+
+    const PROVINCE_NAMES = [
+      'Northwatch','Silvermere','Westfall','Oakridge','Storm Coast','Iron Hollow',
+      'Sunfield','Rivergate','Ashenford','High March','Gold Bay','Deepwood',
+      'Mistvale','Red Cliffs','Greenport','Stoneplain','Frostmoor','Eastreach',
+      'Kingsroad','White Harbor','Southmere','Ravenhill','Bluewater','Oldgate'
+    ];
+
+    let game = null;
+    let tickTimer = null;
+    let speed = 0;
+    let selectedProvinceId = null;
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function createNewGame() {
+      const factions = [
+        { name: 'Albion', ai: false, government: 'Monarchy', gold: 120, manpower: 90, army: 22, navy: 8, stability: 72, prestige: 25, tech: 1, relations: {} },
+        { name: 'Varenne', ai: true, government: 'Republic', gold: 95, manpower: 85, army: 18, navy: 6, stability: 64, prestige: 18, tech: 1, relations: {} },
+        { name: 'Solmark', ai: true, government: 'Duchy', gold: 110, manpower: 100, army: 20, navy: 4, stability: 68, prestige: 16, tech: 1, relations: {} },
+        { name: 'Norvia', ai: true, government: 'Monarchy', gold: 90, manpower: 110, army: 24, navy: 2, stability: 60, prestige: 12, tech: 1, relations: {} },
+        { name: 'Esten', ai: true, government: 'Merchant League', gold: 130, manpower: 70, army: 16, navy: 10, stability: 70, prestige: 20, tech: 1, relations: {} },
+        { name: 'FreeCities', ai: true, government: 'Republic', gold: 80, manpower: 65, army: 14, navy: 7, stability: 75, prestige: 14, tech: 1, relations: {} }
+      ];
+
+      factions.forEach(f => {
+        factions.forEach(other => {
+          if (f.name !== other.name) f.relations[other.name] = rand(-20, 40);
+        });
+      });
+
+      const provinces = PROVINCE_NAMES.map((name, i) => {
+        let owner;
+        if (i < 5) owner = 'Albion';
+        else if (i < 9) owner = 'Varenne';
+        else if (i < 13) owner = 'Solmark';
+        else if (i < 17) owner = 'Norvia';
+        else if (i < 21) owner = 'Esten';
+        else owner = 'FreeCities';
+
+        return {
+          id: i,
+          name,
+          owner,
+          development: rand(2, 8),
+          unrest: rand(2, 14),
+          fort: rand(0, 2),
+          trade: rand(1, 6),
+          manpower: rand(2, 7),
+          coastal: [4,5,10,14,19,22,23].includes(i),
+          core: owner,
+          loot: 0
+        };
+      });
+
+      game = {
+        year: 1444,
+        month: 11,
+        day: 11,
+        player: 'Albion',
+        factions,
+        provinces,
+        log: [
+          'The age begins. Albion stands ready to make very questionable geopolitical decisions.',
+          'You are absolutely not legally distinct from anything. Probably.'
+        ],
+        missions: [
+          { id: 'own8', text: 'Own 8 provinces', done: false },
+          { id: 'tech3', text: 'Reach Technology 3', done: false },
+          { id: 'prestige50', text: 'Reach 50 Prestige', done: false }
+        ],
+        wars: []
+      };
+
+      selectedProvinceId = null;
+      setSpeed(0);
+      render();
+      addLog('A new campaign has started.');
+    }
+
+    function getFaction(name) {
+      return game.factions.find(f => f.name === name);
+    }
+
+    function getPlayer() {
+      return getFaction(game.player);
+    }
+
+    function ownedProvinces(owner) {
+      return game.provinces.filter(p => p.owner === owner);
+    }
+
+    function borderTargets(owner) {
+      const provinces = ownedProvinces(owner);
+      const ids = new Set(provinces.map(p => p.id));
+      const targets = new Set();
+      provinces.forEach(p => {
+        neighbors(p.id).forEach(n => {
+          if (!ids.has(n) && game.provinces[n]) targets.add(n);
+        });
+      });
+      return [...targets].map(id => game.provinces[id]);
+    }
+
+    function neighbors(id) {
+      const cols = 6;
+      const rows = 4;
+      const x = id % cols;
+      const y = Math.floor(id / cols);
+      const out = [];
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) out.push(ny * cols + nx);
+      });
+      return out;
+    }
+
+    function addLog(text) {
+      game.log.unshift(`${formatDate()} — ${text}`);
+      game.log = game.log.slice(0, 120);
+      renderLog();
+    }
+
+    function formatDate() {
+      return `${String(game.day).padStart(2,'0')}/${String(game.month).padStart(2,'0')}/${game.year}`;
+    }
+
+    function setSpeed(newSpeed) {
+      speed = newSpeed;
+      document.getElementById('speedLabel').textContent = speed === 0 ? 'Paused' : speed === 1 ? 'Normal' : 'Fast';
+      if (tickTimer) clearInterval(tickTimer);
+      if (speed > 0) {
+        tickTimer = setInterval(gameTick, speed === 1 ? 900 : 350);
+      }
+    }
+
+    function gameTick() {
+      advanceDate();
+      monthlyEconomy();
+      aiTurn();
+      randomEvents();
+      updateMissions();
+      render();
+    }
+
+    function advanceDate() {
+      game.day += 10;
+      if (game.day > 30) {
+        game.day = 1;
+        game.month += 1;
+      }
+      if (game.month > 12) {
+        game.month = 1;
+        game.year += 1;
+        addLog('A new year dawns over the continent.');
+      }
+    }
+
+    function monthlyEconomy() {
+      game.factions.forEach(f => {
+        const provinces = ownedProvinces(f.name);
+        const tax = provinces.reduce((sum, p) => sum + p.development + p.trade, 0);
+        const manpowerGain = provinces.reduce((sum, p) => sum + p.manpower, 0);
+        f.gold += Math.max(3, Math.floor(tax / 3)) - Math.floor(f.army / 12) - Math.floor(f.navy / 8);
+        f.manpower += Math.max(1, Math.floor(manpowerGain / 4));
+        f.stability = clamp(f.stability + rand(-1, 1), 0, 100);
+        provinces.forEach(p => {
+          p.unrest = clamp(p.unrest + rand(-2, 1), 0, 100);
+          if (p.loot > 0) p.loot -= 1;
+        });
+      });
+    }
+
+    function aiTurn() {
+      game.factions.filter(f => f.ai).forEach(ai => {
+        if (ai.gold > 120 && ai.manpower > 20 && Math.random() < 0.35) {
+          ai.army += rand(2, 5);
+          ai.manpower -= rand(4, 8);
+          ai.gold -= rand(12, 20);
+        }
+
+        if (ai.gold > 90 && Math.random() < 0.2) {
+          ai.tech += 1;
+          ai.gold -= 50;
+          ai.prestige += 3;
+          addLog(`${ai.name} advances its state apparatus to Technology ${ai.tech}.`);
+        }
+
+        const targets = borderTargets(ai.name).filter(p => {
+          const rel = ai.relations[p.owner] ?? 0;
+          return rel < 10;
+        });
+
+        if (targets.length && Math.random() < 0.18) {
+          const target = pick(targets);
+          resolveWar(ai.name, target.owner, target.id, true);
+        }
+      });
+    }
+
+    function randomEvents() {
+      if (Math.random() < 0.14) {
+        const player = getPlayer();
+        const roll = rand(1, 5);
+        if (roll === 1) {
+          player.gold += 35;
+          addLog('A wealthy merchant fleet enriches Albion. +35 gold.');
+        } else if (roll === 2) {
+          player.stability = clamp(player.stability - 8, 0, 100);
+          addLog('Court intrigue spreads unrest. -8 stability.');
+        } else if (roll === 3) {
+          player.manpower += 20;
+          addLog('Rural levies answer the call. +20 manpower.');
+        } else if (roll === 4) {
+          player.prestige += 6;
+          addLog('A diplomatic marriage raises your standing. +6 prestige.');
+        } else {
+          const own = ownedProvinces(game.player);
+          if (own.length) {
+            const p = pick(own);
+            p.development += 1;
+            addLog(`${p.name} prospers after a good harvest. +1 development.`);
+          }
+        }
+      }
+    }
+
+    function resolveWar(attackerName, defenderName, provinceId, aiInitiated = false) {
+      const attacker = getFaction(attackerName);
+      const defender = getFaction(defenderName);
+      const province = game.provinces[provinceId];
+      if (!attacker || !defender || !province || province.owner !== defenderName) return;
+      if (attacker.army < 5) return;
+
+      const attackPower = attacker.army + attacker.tech * 3 + rand(0, 12) + Math.floor(attacker.prestige / 10);
+      const defendPower = defender.army + defender.tech * 3 + province.fort * 4 + rand(0, 12) + Math.floor(defender.stability / 20);
+
+      const attackLoss = rand(2, 7);
+      const defendLoss = rand(2, 7);
+      attacker.army = Math.max(1, attacker.army - attackLoss);
+      defender.army = Math.max(0, defender.army - defendLoss);
+      attacker.manpower = Math.max(0, attacker.manpower - rand(3, 8));
+      defender.manpower = Math.max(0, defender.manpower - rand(3, 8));
+
+      if (attackPower >= defendPower) {
+        province.owner = attackerName;
+        province.unrest = 25;
+        province.loot = 3;
+        attacker.prestige += 8;
+        defender.prestige -= 6;
+        attacker.gold += rand(8, 20);
+        addLog(`${attackerName} defeats ${defenderName} and seizes ${province.name}.`);
+        if (!aiInitiated && attackerName === game.player) {
+          addLog(`Your banners now fly over ${province.name}.`);
+        }
+      } else {
+        attacker.prestige -= 4;
+        defender.prestige += 4;
+        addLog(`${defenderName} repels an invasion in ${province.name}.`);
+      }
+
+      attacker.relations[defenderName] = (attacker.relations[defenderName] ?? 0) - 20;
+      defender.relations[attackerName] = (defender.relations[attackerName] ?? 0) - 20;
+    }
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function raiseArmy() {
+      const p = getPlayer();
+      if (p.gold < 20 || p.manpower < 10) return addLog('Not enough gold or manpower to raise more troops.');
+      p.gold -= 20;
+      p.manpower -= 10;
+      p.army += rand(4, 7);
+      addLog('New regiments are raised for the crown.');
+      render();
+    }
+
+    function buildShip() {
+      const p = getPlayer();
+      const coastal = ownedProvinces(game.player).some(pr => pr.coastal);
+      if (!coastal) return addLog('You need a coastal province to build ships.');
+      if (p.gold < 18) return addLog('Not enough gold to construct a ship.');
+      p.gold -= 18;
+      p.navy += 1;
+      p.prestige += 1;
+      addLog('A fresh ship joins your navy.');
+      render();
+    }
+
+    function developProvince() {
+      if (selectedProvinceId == null) return addLog('Select one of your provinces first.');
+      const province = game.provinces[selectedProvinceId];
+      const p = getPlayer();
+      if (province.owner !== game.player) return addLog('You may only develop your own provinces.');
+      const cost = 18 + province.development * 4;
+      if (p.gold < cost) return addLog(`You need ${cost} gold to develop ${province.name}.`);
+      p.gold -= cost;
+      province.development += 1;
+      province.trade += Math.random() < 0.5 ? 1 : 0;
+      province.manpower += Math.random() < 0.5 ? 1 : 0;
+      province.unrest = clamp(province.unrest - 6, 0, 100);
+      addLog(`${province.name} is developed further.`);
+      render();
+    }
+
+    function researchTech() {
+      const p = getPlayer();
+      const cost = 60 + p.tech * 25;
+      if (p.gold < cost) return addLog(`Technology ${p.tech + 1} requires ${cost} gold.`);
+      p.gold -= cost;
+      p.tech += 1;
+      p.prestige += 4;
+      addLog(`Albion reaches Technology ${p.tech}.`);
+      render();
+    }
+
+    function boostStability() {
+      const p = getPlayer();
+      if (p.gold < 30) return addLog('Not enough gold to stabilize the realm.');
+      p.gold -= 30;
+      p.stability = clamp(p.stability + 15, 0, 100);
+      addLog('Royal authority calms the realm.');
+      render();
+    }
+
+    function collectTaxes() {
+      const p = getPlayer();
+      const amount = ownedProvinces(game.player).reduce((sum, pr) => sum + pr.development, 0) + rand(8, 16);
+      p.gold += amount;
+      p.stability = clamp(p.stability - 4, 0, 100);
+      addLog(`Special taxation brings in ${amount} gold, but lowers stability.`);
+      render();
+    }
+
+    function selectProvince(id) {
+      selectedProvinceId = id;
+      renderProvinceInfo();
+      renderMap();
+    }
+
+    function improveRelations(name) {
+      const p = getPlayer();
+      if (p.gold < 15) return addLog('You need 15 gold to send diplomats and gifts.');
+      p.gold -= 15;
+      p.relations[name] = clamp((p.relations[name] ?? 0) + 15, -100, 100);
+      getFaction(name).relations[game.player] = clamp((getFaction(name).relations[game.player] ?? 0) + 10, -100, 100);
+      addLog(`Relations with ${name} improve.`);
+      render();
+    }
+
+    function declareWarOnOwner() {
+      if (selectedProvinceId == null) return addLog('Select a target province first.');
+      const province = game.provinces[selectedProvinceId];
+      if (province.owner === game.player) return addLog('Declaring war on yourself is advanced statecraft, but not useful.');
+      resolveWar(game.player, province.owner, province.id, false);
+      render();
+    }
+
+    function claimProvince() {
+      if (selectedProvinceId == null) return addLog('Select a province first.');
+      const province = game.provinces[selectedProvinceId];
+      const p = getPlayer();
+      if (province.owner === game.player) return addLog('You already own this province.');
+      if (p.gold < 25) return addLog('Fabricating a claim costs 25 gold.');
+      p.gold -= 25;
+      p.prestige += 2;
+      p.relations[province.owner] = (p.relations[province.owner] ?? 0) - 10;
+      addLog(`A dubious legal case is assembled to claim ${province.name}.`);
+      render();
+    }
+
+    function updateMissions() {
+      const p = getPlayer();
+      game.missions.forEach(m => {
+        if (m.id === 'own8' && ownedProvinces(game.player).length >= 8) m.done = true;
+        if (m.id === 'tech3' && p.tech >= 3) m.done = true;
+        if (m.id === 'prestige50' && p.prestige >= 50) m.done = true;
+      });
+    }
+
+    function render() {
+      const p = getPlayer();
+      document.getElementById('dateLabel').textContent = formatDate();
+      document.getElementById('nationName').textContent = p.name;
+      document.getElementById('government').textContent = p.government;
+      document.getElementById('gold').textContent = p.gold;
+      document.getElementById('manpower').textContent = p.manpower;
+      document.getElementById('army').textContent = p.army;
+      document.getElementById('navy').textContent = p.navy;
+      document.getElementById('stability').textContent = p.stability;
+      document.getElementById('prestige').textContent = p.prestige;
+      document.getElementById('tech').textContent = p.tech;
+      document.getElementById('ownedCount').textContent = ownedProvinces(game.player).length;
+      renderLegend();
+      renderMap();
+      renderProvinceInfo();
+      renderLog();
+      renderFactions();
+      renderMissions();
+    }
+
+    function renderLegend() {
+      const legend = document.getElementById('legend');
+      legend.innerHTML = '';
+      game.factions.forEach(f => {
+        const el = document.createElement('div');
+        el.className = 'badge';
+        el.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[f.name]};margin-right:6px;"></span>${f.name}`;
+        legend.appendChild(el);
+      });
+    }
+
+    function renderMap() {
+      const map = document.getElementById('map');
+      map.innerHTML = '';
+      game.provinces.forEach(province => {
+        const div = document.createElement('div');
+        div.className = 'province' + (selectedProvinceId === province.id ? ' selected' : '');
+        div.style.background = COLORS[province.owner] || '#64748b';
+        div.innerHTML = `<div>${province.name}</div><div class="small">Dev ${province.development} • ${province.owner}</div>`;
+        div.onclick = () => selectProvince(province.id);
+        map.appendChild(div);
+      });
+    }
+
+    function renderProvinceInfo() {
+      const box = document.getElementById('provinceInfo');
+      if (selectedProvinceId == null) {
+        box.innerHTML = 'Select a province on the map.';
+        return;
+      }
+      const p = game.provinces[selectedProvinceId];
+      const isOwned = p.owner === game.player;
+      box.innerHTML = `
+        <div class="faction-item">
+          <div style="font-size:20px;font-weight:700;">${p.name}</div>
+          <div style="color:var(--muted);margin-top:4px;">Owner: <b>${p.owner}</b></div>
+          <div style="margin-top:8px;">Development: <b>${p.development}</b> • Trade: <b>${p.trade}</b> • Manpower: <b>${p.manpower}</b></div>
+          <div style="margin-top:6px;">Fort: <b>${p.fort}</b> • Coastal: <b>${p.coastal ? 'Yes' : 'No'}</b></div>
+          <div style="margin-top:6px;">Unrest: <b>${p.unrest}</b></div>
+          <div class="progress"><div style="width:${clamp(100 - p.unrest, 0, 100)}%"></div></div>
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button onclick="${isOwned ? 'developProvince()' : 'claimProvince()'}">${isOwned ? 'Develop' : 'Fabricate Claim'}</button>
+            <button onclick="${isOwned ? 'boostStability()' : 'declareWarOnOwner()'}">${isOwned ? 'Pacify Realm' : 'Invade Province'}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLog() {
+      const log = document.getElementById('log');
+      log.innerHTML = game.log.map(entry => `<div class="log-entry">${entry}</div>`).join('');
+    }
+
+    function renderFactions() {
+      const list = document.getElementById('factionList');
+      const player = getPlayer();
+      list.innerHTML = '';
+      game.factions.filter(f => f.name !== game.player).forEach(f => {
+        const rel = player.relations[f.name] ?? 0;
+        const provinces = ownedProvinces(f.name).length;
+        const div = document.createElement('div');
+        div.className = 'faction-item';
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+            <div>
+              <div style="font-weight:700;">${f.name}</div>
+              <div style="color:var(--muted);font-size:12px;">${f.government} • ${provinces} provinces</div>
+            </div>
+            <div class="${rel >= 0 ? 'good' : 'bad'}">${rel}</div>
+          </div>
+          <div style="margin-top:6px;font-size:13px;">Army ${f.army} • Navy ${f.navy} • Tech ${f.tech}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <button onclick="improveRelations('${f.name.replace(/'/g, "\\'")}')">Improve Relations</button>
+            <button onclick="selectEnemyProvince('${f.name.replace(/'/g, "\\'")}')">Find Border Target</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function selectEnemyProvince(name) {
+      const targets = borderTargets(game.player).filter(p => p.owner === name);
+      if (!targets.length) return addLog(`No bordering province from ${name} is currently available.`);
+      const target = pick(targets);
+      selectedProvinceId = target.id;
+      addLog(`Map centered in your mind on ${target.name}, a province of ${name}.`);
+      render();
+    }
+
+    function renderMissions() {
+      const missions = document.getElementById('missions');
+      missions.innerHTML = '';
+      game.missions.forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'mission-item';
+        el.innerHTML = `<div style="font-weight:700;">${m.done ? '✅' : '⬜'} ${m.text}</div>`;
+        missions.appendChild(el);
+      });
+    }
+
+    function saveGame() {
+      localStorage.setItem('miniUniversalisSave', JSON.stringify(game));
+      addLog('Game saved to localStorage.');
+    }
+
+    function loadGame() {
+      const raw = localStorage.getItem('miniUniversalisSave');
+      if (!raw) return addLog('No save file found in localStorage.');
+      try {
+        game = JSON.parse(raw);
+        addLog('Save loaded successfully.');
+        render();
+      } catch (err) {
+        alert('Save file could not be loaded.');
+      }
+    }
+
+    document.getElementById('pauseBtn').onclick = () => setSpeed(0);
+    document.getElementById('playBtn').onclick = () => setSpeed(1);
+    document.getElementById('fastBtn').onclick = () => setSpeed(2);
+    document.getElementById('saveBtn').onclick = saveGame;
+    document.getElementById('loadBtn').onclick = loadGame;
+    document.getElementById('resetBtn').onclick = () => {
+      if (confirm('Start a new game?')) createNewGame();
+    };
+
+    createNewGame();
+  </script>
+</body>
+</html>
