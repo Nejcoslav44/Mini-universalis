@@ -3,674 +3,581 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Live 3D Model Viewer</title>
+  <title>Photogrammetry Capture for SolidWorks</title>
   <style>
     :root {
-      --bg: #0b1020;
-      --panel: rgba(17, 24, 39, 0.88);
-      --border: rgba(255, 255, 255, 0.12);
+      --bg: #08111f;
+      --panel: rgba(15, 23, 42, 0.92);
+      --panel-2: rgba(30, 41, 59, 0.9);
+      --border: rgba(255,255,255,0.12);
       --text: #e5e7eb;
-      --muted: #9ca3af;
-      --accent: #60a5fa;
-      --good: #34d399;
-      --warn: #fbbf24;
-      --danger: #f87171;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --good: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: Inter, Arial, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(96, 165, 250, 0.18), transparent 30%),
-        radial-gradient(circle at top right, rgba(52, 211, 153, 0.12), transparent 25%),
+        radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(16,185,129,0.12), transparent 25%),
         linear-gradient(160deg, #020617 0%, #0f172a 55%, #111827 100%);
       min-height: 100vh;
-      overflow: hidden;
     }
-
-    #app {
+    .app {
       display: grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: 380px 1fr;
       min-height: 100vh;
     }
-
     .sidebar {
-      padding: 20px;
+      padding: 18px;
       border-right: 1px solid var(--border);
-      background: rgba(3, 7, 18, 0.72);
-      backdrop-filter: blur(14px);
+      background: rgba(2, 6, 23, 0.8);
+      backdrop-filter: blur(12px);
       overflow-y: auto;
     }
-
+    .main {
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+    }
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 16px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 14px 38px rgba(0,0,0,0.25);
       margin-bottom: 16px;
     }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: 1.5rem;
-    }
-
-    h2 {
-      margin: 0 0 12px;
-      font-size: 1rem;
-    }
-
-    p, label, li, button, input, select {
-      font-size: 0.95rem;
-      line-height: 1.45;
-    }
-
+    h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    h2 { margin: 0 0 12px; font-size: 1rem; }
+    p, li, label, button, select, input { font-size: 0.95rem; line-height: 1.45; }
     .muted { color: var(--muted); }
-
-    .row {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    button, input[type="file"], input[type="range"], select {
+    .row { display: grid; gap: 10px; margin-bottom: 12px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    button, select, input[type="number"] {
       width: 100%;
-    }
-
-    button, select {
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255,255,255,0.05);
       color: var(--text);
-      padding: 10px 12px;
+      padding: 11px 12px;
       border-radius: 12px;
-      cursor: pointer;
-      transition: 0.2s ease;
     }
-
-    button:hover, select:hover {
-      border-color: rgba(255, 255, 255, 0.22);
-      transform: translateY(-1px);
-    }
-
-    button.primary {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border-color: rgba(96, 165, 250, 0.45);
-    }
-
-    button.good {
-      background: linear-gradient(135deg, #059669, #047857);
-      border-color: rgba(52, 211, 153, 0.4);
-    }
-
-    button.warn {
-      background: linear-gradient(135deg, #b45309, #92400e);
-      border-color: rgba(251, 191, 36, 0.35);
-    }
-
-    .viewer-wrap {
+    button { cursor: pointer; transition: .2s ease; }
+    button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.22); }
+    button.primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+    button.good { background: linear-gradient(135deg, #059669, #047857); }
+    button.warn { background: linear-gradient(135deg, #b45309, #92400e); }
+    button.danger { background: linear-gradient(135deg, #b91c1c, #991b1b); }
+    .viewer-card {
       position: relative;
-      min-height: 100vh;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      min-height: 420px;
     }
-
-    #viewer {
+    video, canvas#overlay {
+      display: block;
       width: 100%;
-      height: 100vh;
-      display: block;
+      height: min(72vh, 820px);
+      background: #000;
+      object-fit: cover;
     }
-
-    .hud {
+    #overlay {
       position: absolute;
-      top: 18px;
-      right: 18px;
-      max-width: 340px;
-      background: rgba(15, 23, 42, 0.72);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 14px 16px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+      inset: 0;
+      pointer-events: none;
     }
-
-    .hud strong {
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .status {
-      margin-top: 8px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      word-break: break-word;
-    }
-
-    .metric {
+    .topbar {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      align-items: center;
+      flex-wrap: wrap;
     }
-
-    .metric:last-child { border-bottom: none; }
-
-    .pill {
+    .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
       font-size: 0.85rem;
     }
-
-    .help-list {
-      margin: 8px 0 0;
-      padding-left: 18px;
+    .status {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
       color: var(--muted);
-    }
-
-    .footer-note {
       margin-top: 10px;
-      font-size: 0.82rem;
-      color: var(--muted);
+      word-break: break-word;
     }
-
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .thumb {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #020617;
+      aspect-ratio: 1 / 1;
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .thumb span {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      font-size: 0.75rem;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: rgba(2,6,23,0.78);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .metrics {
+      display: grid;
+      gap: 8px;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .metric:last-child { border-bottom: none; }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .tips { margin: 0; padding-left: 18px; color: var(--muted); }
+    .pill-active { color: #d1fae5; border-color: rgba(16,185,129,0.4); }
+    .warning-box {
+      border: 1px solid rgba(245,158,11,0.35);
+      background: rgba(245,158,11,0.08);
+      color: #fde68a;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
     @media (max-width: 980px) {
-      #app {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        min-height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .viewer-wrap, #viewer {
-        height: 72vh;
-        min-height: 480px;
-      }
+      .app { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+      video, canvas#overlay { height: 56vh; }
     }
   </style>
 </head>
 <body>
-  <div id="app">
+  <div class="app">
     <aside class="sidebar">
       <div class="card">
-        <h1>Live 3D Model Viewer</h1>
-        <p class="muted">Upload a 3D model and inspect it in-browser. This is perfect for checking scans before bringing them into SolidWorks.</p>
-        <div class="pill">Supports STL, OBJ, GLTF, GLB</div>
+        <h1>Photogrammetry Capture</h1>
+        <p class="muted">This site uses your phone camera to capture a full image set for a chair or other object. It does <strong>not</strong> build a SolidWorks-ready mesh in pure browser code; instead it gives you a clean capture workflow and exports your image set so you can reconstruct the mesh in photogrammetry software.</p>
+        <div class="warning-box">
+          Browser-only HTML is great for <strong>capture</strong>. High-quality mesh reconstruction still normally needs a dedicated engine such as RealityCapture, Meshroom, COLMAP, Polycam, or RealityScan.
+        </div>
       </div>
 
       <div class="card">
-        <h2>Load Model</h2>
+        <h2>Camera Setup</h2>
         <div class="row">
-          <input id="fileInput" type="file" accept=".stl,.obj,.gltf,.glb" />
+          <label for="cameraSelect">Camera</label>
+          <select id="cameraSelect"></select>
         </div>
         <div class="two-col">
-          <button id="loadDemoBtn" class="primary">Load Demo Cube</button>
-          <button id="clearBtn">Clear Model</button>
+          <button id="startBtn" class="primary">Start Camera</button>
+          <button id="stopBtn">Stop Camera</button>
         </div>
-        <div class="status" id="status">No model loaded yet.</div>
+        <div class="three-col">
+          <button id="switchFacingBtn">Rear Cam</button>
+          <button id="guideBtn">Guide: On</button>
+          <button id="flashBtn">Flash: Off</button>
+        </div>
+        <div class="status" id="status">Camera not started.</div>
       </div>
 
       <div class="card">
-        <h2>Display</h2>
+        <h2>Capture Control</h2>
         <div class="row">
-          <label for="renderMode">Render mode</label>
-          <select id="renderMode">
-            <option value="solid">Solid</option>
-            <option value="wireframe">Wireframe</option>
-            <option value="solid-wire">Solid + Wireframe</option>
-          </select>
+          <label for="captureCount">Target photo count</label>
+          <input id="captureCount" type="number" min="20" max="600" value="120" />
         </div>
         <div class="row">
-          <label for="bgMode">Background</label>
-          <select id="bgMode">
-            <option value="dark">Dark</option>
-            <option value="studio">Studio Blue</option>
-            <option value="light">Light</option>
-          </select>
+          <label for="intervalMs">Auto-capture interval (ms)</label>
+          <input id="intervalMs" type="number" min="400" max="5000" value="1200" />
         </div>
         <div class="two-col">
-          <button id="fitBtn" class="good">Fit to Screen</button>
-          <button id="resetViewBtn">Reset View</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Lighting</h2>
-        <div class="row">
-          <label for="lightIntensity">Main light intensity</label>
-          <input id="lightIntensity" type="range" min="0.2" max="3" step="0.1" value="1.4" />
-        </div>
-        <div class="row">
-          <label for="ambientIntensity">Ambient light</label>
-          <input id="ambientIntensity" type="range" min="0" max="3" step="0.1" value="1.2" />
+          <button id="captureBtn" class="good">Capture One</button>
+          <button id="autoBtn" class="warn">Start Auto</button>
         </div>
         <div class="two-col">
-          <button id="rotateBtn" class="warn">Auto Rotate: Off</button>
-          <button id="gridBtn">Grid: On</button>
+          <button id="downloadJsonBtn">Download Metadata</button>
+          <button id="clearBtn" class="danger">Clear Photos</button>
         </div>
       </div>
 
       <div class="card">
-        <h2>Model Info</h2>
-        <div id="metrics">
-          <div class="metric"><span>Name</span><strong id="metricName">-</strong></div>
-          <div class="metric"><span>Format</span><strong id="metricFormat">-</strong></div>
-          <div class="metric"><span>Approx. size</span><strong id="metricSize">-</strong></div>
-          <div class="metric"><span>Triangles</span><strong id="metricTriangles">-</strong></div>
+        <h2>Session Stats</h2>
+        <div class="metrics">
+          <div class="metric"><span>Photos captured</span><strong id="mPhotos">0</strong></div>
+          <div class="metric"><span>Target reached</span><strong id="mTarget">No</strong></div>
+          <div class="metric"><span>Recommended rings</span><strong>3</strong></div>
+          <div class="metric"><span>Capture mode</span><strong id="mMode">Manual</strong></div>
         </div>
       </div>
 
       <div class="card">
-        <h2>Controls</h2>
-        <ul class="help-list">
-          <li>Left mouse: rotate</li>
-          <li>Right mouse: pan</li>
-          <li>Mouse wheel: zoom</li>
-          <li>Fit to Screen after every new upload</li>
-        </ul>
-        <p class="footer-note">For scan files, STL usually loads easiest. If your iPhone app exports GLB, this viewer can open it directly.</p>
+        <h2>How To Scan a Chair</h2>
+        <ol class="tips">
+          <li>Keep the chair still and use even light.</li>
+          <li>Make one full circle at seat height.</li>
+          <li>Make a second circle slightly above, angled down.</li>
+          <li>Make a third circle slightly below, angled up.</li>
+          <li>Keep 70% overlap between shots.</li>
+          <li>Take extra close shots of seams and cushion edges.</li>
+        </ol>
       </div>
     </aside>
 
-    <main class="viewer-wrap">
-      <canvas id="viewer"></canvas>
-      <div class="hud">
-        <strong>Tip</strong>
-        Use this page to preview your scan, check for holes, and show the model live to someone else before exporting into CAD.
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="badge" id="sessionBadge">Ready for capture</div>
+        </div>
+        <div class="badge">Best use: phone in portrait, rear camera, slow circular motion</div>
+      </div>
+
+      <div class="viewer-card">
+        <video id="video" playsinline autoplay muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+
+      <div class="card">
+        <div class="footer">
+          <div>
+            <h2 style="margin-bottom:6px;">Captured Frames</h2>
+            <p class="muted" style="margin:0;">Long-press or right-click any thumbnail to save manually. Metadata export includes capture order and timestamps.</p>
+          </div>
+        </div>
+        <div class="thumb-grid" id="thumbGrid"></div>
       </div>
     </main>
   </div>
 
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.161.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js';
-    import { STLLoader } from 'https://unpkg.com/three@0.161.0/examples/jsm/loaders/STLLoader.js';
-    import { OBJLoader } from 'https://unpkg.com/three@0.161.0/examples/jsm/loaders/OBJLoader.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
-
-    const canvas = document.getElementById('viewer');
+  <script>
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const ctx = overlay.getContext('2d');
+    const cameraSelect = document.getElementById('cameraSelect');
     const statusEl = document.getElementById('status');
+    const thumbGrid = document.getElementById('thumbGrid');
+    const sessionBadge = document.getElementById('sessionBadge');
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 5000);
-    camera.position.set(2.8, 2.2, 3.6);
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const switchFacingBtn = document.getElementById('switchFacingBtn');
+    const guideBtn = document.getElementById('guideBtn');
+    const flashBtn = document.getElementById('flashBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const autoBtn = document.getElementById('autoBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight, false);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
+    const captureCountInput = document.getElementById('captureCount');
+    const intervalMsInput = document.getElementById('intervalMs');
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.autoRotate = false;
-    controls.autoRotateSpeed = 1.5;
-    controls.target.set(0, 0.4, 0);
+    const mPhotos = document.getElementById('mPhotos');
+    const mTarget = document.getElementById('mTarget');
+    const mMode = document.getElementById('mMode');
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambientLight);
+    let stream = null;
+    let currentDeviceId = '';
+    let useRear = true;
+    let torchEnabled = false;
+    let guideEnabled = true;
+    let autoTimer = null;
+    let capturedFrames = [];
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.4);
-    mainLight.position.set(4, 6, 5);
-    mainLight.castShadow = true;
-    scene.add(mainLight);
-
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.65);
-    fillLight.position.set(-5, 3, -4);
-    scene.add(fillLight);
-
-    const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x334155);
-    scene.add(grid);
-
-    const axes = new THREE.AxesHelper(1.5);
-    scene.add(axes);
-
-    let currentModel = null;
-    let currentWireOverlay = null;
-    let currentMeta = {
-      name: '-',
-      format: '-',
-      size: '-',
-      triangles: '-'
-    };
-
-    const defaultMaterial = new THREE.MeshStandardMaterial({
-      color: 0xcbd5e1,
-      metalness: 0.08,
-      roughness: 0.7,
-      side: THREE.DoubleSide
-    });
-
-    const wireMaterial = new THREE.MeshBasicMaterial({
-      color: 0x111827,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.4
-    });
-
-    function updateStatus(message, isError = false) {
+    function setStatus(message, error = false) {
       statusEl.textContent = message;
-      statusEl.style.color = isError ? '#fecaca' : '#9ca3af';
-      statusEl.style.borderColor = isError ? 'rgba(248, 113, 113, 0.4)' : 'rgba(255,255,255,0.12)';
-    }
-
-    function setBackground(mode) {
-      if (mode === 'light') {
-        scene.background = new THREE.Color(0xe5e7eb);
-      } else if (mode === 'studio') {
-        scene.background = new THREE.Color(0x0f172a);
-      } else {
-        scene.background = new THREE.Color(0x020617);
-      }
-    }
-
-    function clearCurrentModel() {
-      if (currentModel) {
-        scene.remove(currentModel);
-        disposeObject(currentModel);
-        currentModel = null;
-      }
-      if (currentWireOverlay) {
-        scene.remove(currentWireOverlay);
-        disposeObject(currentWireOverlay);
-        currentWireOverlay = null;
-      }
-      currentMeta = { name: '-', format: '-', size: '-', triangles: '-' };
-      updateMetrics();
-    }
-
-    function disposeObject(obj) {
-      obj.traverse((child) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
-          else child.material.dispose();
-        }
-      });
-    }
-
-    function applyMaterial(root) {
-      root.traverse((child) => {
-        if (child.isMesh) {
-          child.material = defaultMaterial.clone();
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-    }
-
-    function createWireOverlay(source) {
-      const overlay = source.clone(true);
-      overlay.traverse((child) => {
-        if (child.isMesh) {
-          child.material = wireMaterial.clone();
-        }
-      });
-      return overlay;
-    }
-
-    function centerAndScaleModel(root) {
-      const box = new THREE.Box3().setFromObject(root);
-      const center = new THREE.Vector3();
-      const size = new THREE.Vector3();
-      box.getCenter(center);
-      box.getSize(size);
-
-      root.position.sub(center);
-
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 0) {
-        const targetSize = 2.4;
-        const scale = targetSize / maxDim;
-        root.scale.setScalar(scale);
-      }
-
-      root.position.y += 0.5;
-      return { box, size };
-    }
-
-    function fitCameraToObject(object) {
-      const box = new THREE.Box3().setFromObject(object);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
-
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-      cameraZ *= 1.8;
-
-      camera.position.set(center.x + cameraZ * 0.8, center.y + cameraZ * 0.5, center.z + cameraZ);
-      camera.near = Math.max(0.01, maxDim / 100);
-      camera.far = Math.max(5000, maxDim * 100);
-      camera.updateProjectionMatrix();
-
-      controls.target.copy(center);
-      controls.update();
-    }
-
-    function countTriangles(object) {
-      let triangles = 0;
-      object.traverse((child) => {
-        if (child.isMesh && child.geometry) {
-          const geo = child.geometry;
-          if (geo.index) triangles += geo.index.count / 3;
-          else if (geo.attributes.position) triangles += geo.attributes.position.count / 3;
-        }
-      });
-      return Math.round(triangles);
-    }
-
-    function formatSize(sizeVec) {
-      return `${sizeVec.x.toFixed(2)} × ${sizeVec.y.toFixed(2)} × ${sizeVec.z.toFixed(2)}`;
+      statusEl.style.color = error ? '#fecaca' : '#94a3b8';
+      sessionBadge.textContent = message;
+      sessionBadge.classList.toggle('pill-active', !error);
     }
 
     function updateMetrics() {
-      document.getElementById('metricName').textContent = currentMeta.name;
-      document.getElementById('metricFormat').textContent = currentMeta.format;
-      document.getElementById('metricSize').textContent = currentMeta.size;
-      document.getElementById('metricTriangles').textContent = currentMeta.triangles;
+      mPhotos.textContent = capturedFrames.length;
+      mTarget.textContent = capturedFrames.length >= Number(captureCountInput.value || 0) ? 'Yes' : 'No';
     }
 
-    function setRenderMode(mode) {
-      if (!currentModel) return;
-
-      currentModel.traverse((child) => {
-        if (child.isMesh) {
-          if (mode === 'wireframe') {
-            child.material.wireframe = true;
-            child.material.opacity = 1;
-            child.material.transparent = false;
-          } else {
-            child.material.wireframe = false;
-            child.material.opacity = 1;
-            child.material.transparent = false;
-          }
-        }
+    async function listCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === 'videoinput');
+      cameraSelect.innerHTML = '';
+      cams.forEach((cam, index) => {
+        const opt = document.createElement('option');
+        opt.value = cam.deviceId;
+        opt.textContent = cam.label || `Camera ${index + 1}`;
+        cameraSelect.appendChild(opt);
       });
 
-      if (currentWireOverlay) {
-        currentWireOverlay.visible = mode === 'solid-wire';
+      if (!currentDeviceId && cams.length) {
+        const rearCam = cams.find(c => /back|rear|environment/i.test(c.label));
+        currentDeviceId = rearCam ? rearCam.deviceId : cams[0].deviceId;
+        cameraSelect.value = currentDeviceId;
       }
     }
 
-    function addModel(root, name, format) {
-      clearCurrentModel();
-      applyMaterial(root);
-      const { size } = centerAndScaleModel(root);
-      currentModel = root;
-      scene.add(currentModel);
-
-      currentWireOverlay = createWireOverlay(root);
-      currentWireOverlay.visible = false;
-      scene.add(currentWireOverlay);
-
-      fitCameraToObject(currentModel);
-      currentMeta = {
-        name,
-        format,
-        size: formatSize(size),
-        triangles: countTriangles(root).toLocaleString()
-      };
-      updateMetrics();
-      setRenderMode(document.getElementById('renderMode').value);
-      updateStatus(`Loaded ${name} successfully.`);
-    }
-
-    function loadSTL(file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const loader = new STLLoader();
-          const geometry = loader.parse(event.target.result);
-          geometry.computeVertexNormals();
-          const mesh = new THREE.Mesh(geometry, defaultMaterial.clone());
-          const group = new THREE.Group();
-          group.add(mesh);
-          addModel(group, file.name, 'STL');
-        } catch (error) {
-          updateStatus(`Failed to load STL: ${error.message}`, true);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function loadOBJ(file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const loader = new OBJLoader();
-          const object = loader.parse(event.target.result);
-          addModel(object, file.name, 'OBJ');
-        } catch (error) {
-          updateStatus(`Failed to load OBJ: ${error.message}`, true);
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function loadGLTF(file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const loader = new GLTFLoader();
-        loader.parse(
-          event.target.result,
-          '',
-          (gltf) => {
-            addModel(gltf.scene, file.name, file.name.toLowerCase().endsWith('.glb') ? 'GLB' : 'GLTF');
-          },
-          (error) => {
-            updateStatus(`Failed to load GLTF/GLB: ${error.message || error}`, true);
+    async function startCamera() {
+      try {
+        stopCamera();
+        const constraints = {
+          audio: false,
+          video: currentDeviceId ? {
+            deviceId: { exact: currentDeviceId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          } : {
+            facingMode: useRear ? { ideal: 'environment' } : 'user',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
           }
-        );
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        await video.play();
+        resizeOverlay();
+        await listCameras();
+        setStatus('Camera running. Move slowly around the object.');
+      } catch (err) {
+        setStatus('Could not start camera: ' + err.message, true);
+      }
+    }
+
+    function stopCamera() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      mMode.textContent = 'Manual';
+    }
+
+    function resizeOverlay() {
+      overlay.width = video.clientWidth * window.devicePixelRatio;
+      overlay.height = video.clientHeight * window.devicePixelRatio;
+      drawGuide();
+    }
+
+    function drawGuide() {
+      if (!overlay.width || !overlay.height) return;
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      if (!guideEnabled) return;
+
+      const w = overlay.width;
+      const h = overlay.height;
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      ctx.lineWidth = 2 * window.devicePixelRatio;
+      ctx.setLineDash([12 * window.devicePixelRatio, 10 * window.devicePixelRatio]);
+
+      const padX = w * 0.18;
+      const padY = h * 0.12;
+      const rectW = w - padX * 2;
+      const rectH = h - padY * 2;
+      ctx.strokeRect(padX, padY, rectW, rectH);
+
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(59,130,246,0.85)';
+      ctx.beginPath();
+      ctx.moveTo(w / 2, padY);
+      ctx.lineTo(w / 2, h - padY);
+      ctx.moveTo(padX, h / 2);
+      ctx.lineTo(w - padX, h / 2);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(2,6,23,0.7)';
+      ctx.fillRect(18 * window.devicePixelRatio, 18 * window.devicePixelRatio, 500 * window.devicePixelRatio, 64 * window.devicePixelRatio);
+      ctx.fillStyle = 'white';
+      ctx.font = `${18 * window.devicePixelRatio}px Arial`;
+      ctx.fillText('Keep the chair inside the box and overlap the last view by ~70%', 32 * window.devicePixelRatio, 56 * window.devicePixelRatio);
+    }
+
+    function captureFrame() {
+      if (!stream || video.readyState < 2) {
+        setStatus('Start the camera first.', true);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const width = video.videoWidth || 1280;
+      const height = video.videoHeight || 720;
+      canvas.width = width;
+      canvas.height = height;
+      const c = canvas.getContext('2d');
+      c.drawImage(video, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+      const item = {
+        id: capturedFrames.length + 1,
+        timestamp: new Date().toISOString(),
+        width,
+        height,
+        dataUrl
       };
-      if (file.name.toLowerCase().endsWith('.glb')) reader.readAsArrayBuffer(file);
-      else reader.readAsText(file);
+      capturedFrames.push(item);
+      addThumb(item);
+      updateMetrics();
+      setStatus(`Captured frame ${item.id}. Keep moving slowly around the object.`);
     }
 
-    function loadDemoCube() {
-      const geometry = new THREE.BoxGeometry(1.4, 0.8, 1.2, 8, 8, 8);
-      const mesh = new THREE.Mesh(geometry, defaultMaterial.clone());
-      const group = new THREE.Group();
-      group.add(mesh);
-      addModel(group, 'Demo Cube', 'Procedural');
+    function addThumb(item) {
+      const box = document.createElement('div');
+      box.className = 'thumb';
+
+      const img = document.createElement('img');
+      img.src = item.dataUrl;
+      img.alt = `Frame ${item.id}`;
+      img.title = `Frame ${item.id}`;
+
+      const label = document.createElement('span');
+      label.textContent = `#${item.id}`;
+
+      box.appendChild(img);
+      box.appendChild(label);
+      thumbGrid.prepend(box);
     }
 
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const ext = file.name.split('.').pop().toLowerCase();
-      updateStatus(`Loading ${file.name}...`);
-
-      if (ext === 'stl') loadSTL(file);
-      else if (ext === 'obj') loadOBJ(file);
-      else if (ext === 'gltf' || ext === 'glb') loadGLTF(file);
-      else updateStatus('Unsupported file type. Use STL, OBJ, GLTF, or GLB.', true);
-    });
-
-    document.getElementById('loadDemoBtn').addEventListener('click', loadDemoCube);
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      clearCurrentModel();
-      updateStatus('Model cleared.');
-    });
-
-    document.getElementById('fitBtn').addEventListener('click', () => {
-      if (currentModel) fitCameraToObject(currentModel);
-    });
-
-    document.getElementById('resetViewBtn').addEventListener('click', () => {
-      camera.position.set(2.8, 2.2, 3.6);
-      controls.target.set(0, 0.4, 0);
-      controls.update();
-    });
-
-    document.getElementById('renderMode').addEventListener('change', (e) => {
-      setRenderMode(e.target.value);
-    });
-
-    document.getElementById('bgMode').addEventListener('change', (e) => {
-      setBackground(e.target.value);
-    });
-
-    document.getElementById('lightIntensity').addEventListener('input', (e) => {
-      mainLight.intensity = Number(e.target.value);
-    });
-
-    document.getElementById('ambientIntensity').addEventListener('input', (e) => {
-      ambientLight.intensity = Number(e.target.value);
-    });
-
-    document.getElementById('rotateBtn').addEventListener('click', (e) => {
-      controls.autoRotate = !controls.autoRotate;
-      e.target.textContent = `Auto Rotate: ${controls.autoRotate ? 'On' : 'Off'}`;
-    });
-
-    document.getElementById('gridBtn').addEventListener('click', (e) => {
-      grid.visible = !grid.visible;
-      e.target.textContent = `Grid: ${grid.visible ? 'On' : 'Off'}`;
-    });
-
-    function onResize() {
-      const width = canvas.clientWidth || window.innerWidth;
-      const height = canvas.clientHeight || window.innerHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height, false);
+    function clearFrames() {
+      capturedFrames = [];
+      thumbGrid.innerHTML = '';
+      updateMetrics();
+      setStatus('All captured frames cleared.');
     }
 
-    window.addEventListener('resize', onResize);
-    setBackground('dark');
+    function toggleAutoCapture() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        autoBtn.textContent = 'Start Auto';
+        mMode.textContent = 'Manual';
+        setStatus('Auto-capture stopped.');
+        return;
+      }
+
+      const interval = Math.max(400, Number(intervalMsInput.value || 1200));
+      autoTimer = setInterval(() => {
+        captureFrame();
+        if (capturedFrames.length >= Number(captureCountInput.value || 120)) {
+          toggleAutoCapture();
+          setStatus('Target photo count reached. You can stop and reconstruct the mesh.', false);
+        }
+      }, interval);
+      autoBtn.textContent = 'Stop Auto';
+      mMode.textContent = 'Auto';
+      setStatus('Auto-capture running. Walk slowly in a ring around the object.');
+    }
+
+    async function toggleTorch() {
+      if (!stream) {
+        setStatus('Start the camera first.', true);
+        return;
+      }
+      const track = stream.getVideoTracks()[0];
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (!caps.torch) {
+        setStatus('Torch is not available on this device/browser.', true);
+        return;
+      }
+      torchEnabled = !torchEnabled;
+      try {
+        await track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
+        flashBtn.textContent = `Flash: ${torchEnabled ? 'On' : 'Off'}`;
+      } catch (err) {
+        setStatus('Could not change torch: ' + err.message, true);
+      }
+    }
+
+    function downloadMetadata() {
+      if (!capturedFrames.length) {
+        setStatus('No captured frames to export.', true);
+        return;
+      }
+      const metadata = {
+        createdAt: new Date().toISOString(),
+        targetCount: Number(captureCountInput.value || 120),
+        actualCount: capturedFrames.length,
+        notes: 'Image data omitted from JSON. Save thumbnails manually or extend this file with JSZip to package images.',
+        frames: capturedFrames.map(({ id, timestamp, width, height }) => ({ id, timestamp, width, height }))
+      };
+      const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'photogrammetry_capture_metadata.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    startBtn.addEventListener('click', startCamera);
+    stopBtn.addEventListener('click', () => {
+      stopCamera();
+      setStatus('Camera stopped.');
+    });
+
+    switchFacingBtn.addEventListener('click', async () => {
+      useRear = !useRear;
+      currentDeviceId = '';
+      switchFacingBtn.textContent = useRear ? 'Rear Cam' : 'Front Cam';
+      await startCamera();
+    });
+
+    cameraSelect.addEventListener('change', async (e) => {
+      currentDeviceId = e.target.value;
+      await startCamera();
+    });
+
+    guideBtn.addEventListener('click', () => {
+      guideEnabled = !guideEnabled;
+      guideBtn.textContent = `Guide: ${guideEnabled ? 'On' : 'Off'}`;
+      drawGuide();
+    });
+
+    flashBtn.addEventListener('click', toggleTorch);
+    captureBtn.addEventListener('click', captureFrame);
+    autoBtn.addEventListener('click', toggleAutoCapture);
+    clearBtn.addEventListener('click', clearFrames);
+    downloadJsonBtn.addEventListener('click', downloadMetadata);
+
+    window.addEventListener('resize', resizeOverlay);
+    navigator.mediaDevices?.addEventListener?.('devicechange', listCameras);
+
     updateMetrics();
-    loadDemoCube();
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    animate();
+    listCameras().catch(() => {});
+    setStatus('Ready. Start the camera and capture a full ring around the chair.');
   </script>
 </body>
 </html>
