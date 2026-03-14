@@ -3,885 +3,674 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Universalis</title>
+  <title>Live 3D Model Viewer</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --panel2: #1f2937;
-      --line: #334155;
+      --bg: #0b1020;
+      --panel: rgba(17, 24, 39, 0.88);
+      --border: rgba(255, 255, 255, 0.12);
       --text: #e5e7eb;
-      --muted: #94a3b8;
-      --gold: #fbbf24;
-      --green: #22c55e;
-      --red: #ef4444;
-      --blue: #60a5fa;
-      --purple: #a78bfa;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --good: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+      font-family: Inter, Arial, sans-serif;
       color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(52, 211, 153, 0.12), transparent 25%),
+        linear-gradient(160deg, #020617 0%, #0f172a 55%, #111827 100%);
+      min-height: 100vh;
+      overflow: hidden;
     }
 
-    .topbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
+    #app {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      padding: 20px;
+      border-right: 1px solid var(--border);
+      background: rgba(3, 7, 18, 0.72);
+      backdrop-filter: blur(14px);
+      overflow-y: auto;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    p, label, li, button, input, select {
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .muted { color: var(--muted); }
+
+    .row {
+      display: grid;
       gap: 10px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(15, 23, 42, 0.95);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      margin-bottom: 12px;
     }
 
-    .title {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
-    .subtitle {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .top-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
+    button, input[type="file"], input[type="range"], select {
+      width: 100%;
     }
 
     button, select {
-      background: var(--panel2);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
       color: var(--text);
-      border: 1px solid var(--line);
-      padding: 8px 10px;
-      border-radius: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
       cursor: pointer;
+      transition: 0.2s ease;
     }
 
     button:hover, select:hover {
-      filter: brightness(1.1);
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 320px 1fr 320px;
-      gap: 12px;
-      padding: 12px;
+    button.primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-color: rgba(96, 165, 250, 0.45);
     }
 
-    .panel {
-      background: rgba(17, 24, 39, 0.95);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px;
-      min-height: 120px;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+    button.good {
+      background: linear-gradient(135deg, #059669, #047857);
+      border-color: rgba(52, 211, 153, 0.4);
     }
 
-    .panel h2, .panel h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
+    button.warn {
+      background: linear-gradient(135deg, #b45309, #92400e);
+      border-color: rgba(251, 191, 36, 0.35);
     }
 
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+    .viewer-wrap {
+      position: relative;
+      min-height: 100vh;
     }
 
-    .stat {
-      background: #0b1220;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .stat-value {
-      font-size: 20px;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-
-    .map-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    #map {
+    #viewer {
       width: 100%;
-      aspect-ratio: 1.5 / 1;
-      background: linear-gradient(180deg, #082f49 0%, #0f172a 100%);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      position: relative;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      grid-template-rows: repeat(4, 1fr);
-      gap: 4px;
-      padding: 6px;
+      height: 100vh;
+      display: block;
     }
 
-    .province {
-      border-radius: 10px;
-      border: 2px solid rgba(255,255,255,0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 700;
-      position: relative;
-      user-select: none;
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
-      overflow: hidden;
-    }
-
-    .province:hover {
-      transform: scale(1.02);
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
-    }
-
-    .province.selected {
-      outline: 3px solid white;
-      z-index: 2;
-    }
-
-    .province .small {
+    .hud {
       position: absolute;
-      bottom: 4px;
-      left: 6px;
-      font-size: 10px;
-      opacity: 0.9;
-      font-weight: 600;
+      top: 18px;
+      right: 18px;
+      max-width: 340px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
     }
 
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
+    .hud strong {
+      display: block;
+      margin-bottom: 6px;
     }
 
-    .badge {
-      font-size: 12px;
-      padding: 5px 8px;
-      border-radius: 999px;
-      background: #0b1220;
-      border: 1px solid var(--line);
+    .status {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
       color: var(--muted);
+      word-break: break-word;
     }
 
-    .actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .actions button {
-      width: 100%;
-    }
-
-    .log {
-      height: 280px;
-      overflow: auto;
-      background: #0b1220;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .log-entry {
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px dashed rgba(148,163,184,0.18);
-    }
-
-    .faction-list, .missions {
+    .metric {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
-    .faction-item, .mission-item {
-      background: #0b1220;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px;
-    }
+    .metric:last-child { border-bottom: none; }
 
-    .progress {
-      height: 10px;
-      background: #111827;
-      border: 1px solid var(--line);
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
       border-radius: 999px;
-      overflow: hidden;
-      margin-top: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      font-size: 0.85rem;
     }
 
-    .progress > div {
-      height: 100%;
-      background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
-      width: 0%;
+    .help-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
     }
 
     .footer-note {
-      font-size: 12px;
-      color: var(--muted);
       margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
     }
 
-    .good { color: var(--green); }
-    .bad { color: var(--red); }
-    .gold { color: var(--gold); }
-    .blue { color: var(--blue); }
-
-    @media (max-width: 1200px) {
-      .layout {
+    @media (max-width: 980px) {
+      #app {
         grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .viewer-wrap, #viewer {
+        height: 72vh;
+        min-height: 480px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div>
-      <div class="title">Mini Universalis</div>
-      <div class="subtitle">A very scuffed grand strategy browser game inspired by map-pain energy.</div>
-    </div>
-    <div class="top-controls">
-      <div class="badge">Date: <span id="dateLabel"></span></div>
-      <div class="badge">Speed: <span id="speedLabel">Paused</span></div>
-      <button id="pauseBtn">Pause</button>
-      <button id="playBtn">Play</button>
-      <button id="fastBtn">Fast</button>
-      <button id="saveBtn">Save</button>
-      <button id="loadBtn">Load</button>
-      <button id="resetBtn">New Game</button>
-    </div>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="card">
+        <h1>Live 3D Model Viewer</h1>
+        <p class="muted">Upload a 3D model and inspect it in-browser. This is perfect for checking scans before bringing them into SolidWorks.</p>
+        <div class="pill">Supports STL, OBJ, GLTF, GLB</div>
+      </div>
+
+      <div class="card">
+        <h2>Load Model</h2>
+        <div class="row">
+          <input id="fileInput" type="file" accept=".stl,.obj,.gltf,.glb" />
+        </div>
+        <div class="two-col">
+          <button id="loadDemoBtn" class="primary">Load Demo Cube</button>
+          <button id="clearBtn">Clear Model</button>
+        </div>
+        <div class="status" id="status">No model loaded yet.</div>
+      </div>
+
+      <div class="card">
+        <h2>Display</h2>
+        <div class="row">
+          <label for="renderMode">Render mode</label>
+          <select id="renderMode">
+            <option value="solid">Solid</option>
+            <option value="wireframe">Wireframe</option>
+            <option value="solid-wire">Solid + Wireframe</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="bgMode">Background</label>
+          <select id="bgMode">
+            <option value="dark">Dark</option>
+            <option value="studio">Studio Blue</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+        <div class="two-col">
+          <button id="fitBtn" class="good">Fit to Screen</button>
+          <button id="resetViewBtn">Reset View</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Lighting</h2>
+        <div class="row">
+          <label for="lightIntensity">Main light intensity</label>
+          <input id="lightIntensity" type="range" min="0.2" max="3" step="0.1" value="1.4" />
+        </div>
+        <div class="row">
+          <label for="ambientIntensity">Ambient light</label>
+          <input id="ambientIntensity" type="range" min="0" max="3" step="0.1" value="1.2" />
+        </div>
+        <div class="two-col">
+          <button id="rotateBtn" class="warn">Auto Rotate: Off</button>
+          <button id="gridBtn">Grid: On</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Model Info</h2>
+        <div id="metrics">
+          <div class="metric"><span>Name</span><strong id="metricName">-</strong></div>
+          <div class="metric"><span>Format</span><strong id="metricFormat">-</strong></div>
+          <div class="metric"><span>Approx. size</span><strong id="metricSize">-</strong></div>
+          <div class="metric"><span>Triangles</span><strong id="metricTriangles">-</strong></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Controls</h2>
+        <ul class="help-list">
+          <li>Left mouse: rotate</li>
+          <li>Right mouse: pan</li>
+          <li>Mouse wheel: zoom</li>
+          <li>Fit to Screen after every new upload</li>
+        </ul>
+        <p class="footer-note">For scan files, STL usually loads easiest. If your iPhone app exports GLB, this viewer can open it directly.</p>
+      </div>
+    </aside>
+
+    <main class="viewer-wrap">
+      <canvas id="viewer"></canvas>
+      <div class="hud">
+        <strong>Tip</strong>
+        Use this page to preview your scan, check for holes, and show the model live to someone else before exporting into CAD.
+      </div>
+    </main>
   </div>
 
-  <div class="layout">
-    <div class="panel">
-      <h2>Your Realm</h2>
-      <div class="stats">
-        <div class="stat"><div class="stat-label">Nation</div><div class="stat-value" id="nationName"></div></div>
-        <div class="stat"><div class="stat-label">Government</div><div class="stat-value" id="government"></div></div>
-        <div class="stat"><div class="stat-label">Gold</div><div class="stat-value gold" id="gold"></div></div>
-        <div class="stat"><div class="stat-label">Manpower</div><div class="stat-value" id="manpower"></div></div>
-        <div class="stat"><div class="stat-label">Army</div><div class="stat-value" id="army"></div></div>
-        <div class="stat"><div class="stat-label">Navy</div><div class="stat-value" id="navy"></div></div>
-        <div class="stat"><div class="stat-label">Stability</div><div class="stat-value" id="stability"></div></div>
-        <div class="stat"><div class="stat-label">Prestige</div><div class="stat-value" id="prestige"></div></div>
-        <div class="stat"><div class="stat-label">Technology</div><div class="stat-value" id="tech"></div></div>
-        <div class="stat"><div class="stat-label">Owned Provinces</div><div class="stat-value" id="ownedCount"></div></div>
-      </div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.161.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js';
+    import { STLLoader } from 'https://unpkg.com/three@0.161.0/examples/jsm/loaders/STLLoader.js';
+    import { OBJLoader } from 'https://unpkg.com/three@0.161.0/examples/jsm/loaders/OBJLoader.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
 
-      <h3 style="margin-top:14px;">Realm Actions</h3>
-      <div class="actions">
-        <button onclick="raiseArmy()">Raise Army</button>
-        <button onclick="buildShip()">Build Ship</button>
-        <button onclick="developProvince()">Develop Province</button>
-        <button onclick="researchTech()">Research Tech</button>
-        <button onclick="boostStability()">Boost Stability</button>
-        <button onclick="collectTaxes()">Collect Taxes</button>
-      </div>
+    const canvas = document.getElementById('viewer');
+    const statusEl = document.getElementById('status');
 
-      <div class="footer-note">Tip: click provinces on the map, then use diplomacy or conquest buttons from the province panel.</div>
-    </div>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 5000);
+    camera.position.set(2.8, 2.2, 3.6);
 
-    <div class="map-wrap">
-      <div class="panel">
-        <h2>World Map</h2>
-        <div class="badge-row" id="legend"></div>
-        <div id="map"></div>
-      </div>
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight, false);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
 
-      <div class="panel">
-        <h2>Event Log</h2>
-        <div class="log" id="log"></div>
-      </div>
-    </div>
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 1.5;
+    controls.target.set(0, 0.4, 0);
 
-    <div class="panel">
-      <h2>Province & Diplomacy</h2>
-      <div id="provinceInfo">Select a province on the map.</div>
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
 
-      <h3 style="margin-top:14px;">Known Powers</h3>
-      <div class="faction-list" id="factionList"></div>
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    mainLight.position.set(4, 6, 5);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
 
-      <h3 style="margin-top:14px;">Missions</h3>
-      <div class="missions" id="missions"></div>
-    </div>
-  </div>
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.65);
+    fillLight.position.set(-5, 3, -4);
+    scene.add(fillLight);
 
-  <script>
-    const COLORS = {
-      Albion: '#3b82f6',
-      Varenne: '#ef4444',
-      Solmark: '#f59e0b',
-      Norvia: '#22c55e',
-      Esten: '#a855f7',
-      FreeCities: '#14b8a6'
+    const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x334155);
+    scene.add(grid);
+
+    const axes = new THREE.AxesHelper(1.5);
+    scene.add(axes);
+
+    let currentModel = null;
+    let currentWireOverlay = null;
+    let currentMeta = {
+      name: '-',
+      format: '-',
+      size: '-',
+      triangles: '-'
     };
 
-    const GOVERNMENTS = ['Monarchy', 'Republic', 'Merchant League', 'Duchy'];
+    const defaultMaterial = new THREE.MeshStandardMaterial({
+      color: 0xcbd5e1,
+      metalness: 0.08,
+      roughness: 0.7,
+      side: THREE.DoubleSide
+    });
 
-    const PROVINCE_NAMES = [
-      'Northwatch','Silvermere','Westfall','Oakridge','Storm Coast','Iron Hollow',
-      'Sunfield','Rivergate','Ashenford','High March','Gold Bay','Deepwood',
-      'Mistvale','Red Cliffs','Greenport','Stoneplain','Frostmoor','Eastreach',
-      'Kingsroad','White Harbor','Southmere','Ravenhill','Bluewater','Oldgate'
-    ];
+    const wireMaterial = new THREE.MeshBasicMaterial({
+      color: 0x111827,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.4
+    });
 
-    let game = null;
-    let tickTimer = null;
-    let speed = 0;
-    let selectedProvinceId = null;
-
-    function rand(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
+    function updateStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? '#fecaca' : '#9ca3af';
+      statusEl.style.borderColor = isError ? 'rgba(248, 113, 113, 0.4)' : 'rgba(255,255,255,0.12)';
     }
 
-    function pick(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
-    }
-
-    function createNewGame() {
-      const factions = [
-        { name: 'Albion', ai: false, government: 'Monarchy', gold: 120, manpower: 90, army: 22, navy: 8, stability: 72, prestige: 25, tech: 1, relations: {} },
-        { name: 'Varenne', ai: true, government: 'Republic', gold: 95, manpower: 85, army: 18, navy: 6, stability: 64, prestige: 18, tech: 1, relations: {} },
-        { name: 'Solmark', ai: true, government: 'Duchy', gold: 110, manpower: 100, army: 20, navy: 4, stability: 68, prestige: 16, tech: 1, relations: {} },
-        { name: 'Norvia', ai: true, government: 'Monarchy', gold: 90, manpower: 110, army: 24, navy: 2, stability: 60, prestige: 12, tech: 1, relations: {} },
-        { name: 'Esten', ai: true, government: 'Merchant League', gold: 130, manpower: 70, army: 16, navy: 10, stability: 70, prestige: 20, tech: 1, relations: {} },
-        { name: 'FreeCities', ai: true, government: 'Republic', gold: 80, manpower: 65, army: 14, navy: 7, stability: 75, prestige: 14, tech: 1, relations: {} }
-      ];
-
-      factions.forEach(f => {
-        factions.forEach(other => {
-          if (f.name !== other.name) f.relations[other.name] = rand(-20, 40);
-        });
-      });
-
-      const provinces = PROVINCE_NAMES.map((name, i) => {
-        let owner;
-        if (i < 5) owner = 'Albion';
-        else if (i < 9) owner = 'Varenne';
-        else if (i < 13) owner = 'Solmark';
-        else if (i < 17) owner = 'Norvia';
-        else if (i < 21) owner = 'Esten';
-        else owner = 'FreeCities';
-
-        return {
-          id: i,
-          name,
-          owner,
-          development: rand(2, 8),
-          unrest: rand(2, 14),
-          fort: rand(0, 2),
-          trade: rand(1, 6),
-          manpower: rand(2, 7),
-          coastal: [4,5,10,14,19,22,23].includes(i),
-          core: owner,
-          loot: 0
-        };
-      });
-
-      game = {
-        year: 1444,
-        month: 11,
-        day: 11,
-        player: 'Albion',
-        factions,
-        provinces,
-        log: [
-          'The age begins. Albion stands ready to make very questionable geopolitical decisions.',
-          'You are absolutely not legally distinct from anything. Probably.'
-        ],
-        missions: [
-          { id: 'own8', text: 'Own 8 provinces', done: false },
-          { id: 'tech3', text: 'Reach Technology 3', done: false },
-          { id: 'prestige50', text: 'Reach 50 Prestige', done: false }
-        ],
-        wars: []
-      };
-
-      selectedProvinceId = null;
-      setSpeed(0);
-      render();
-      addLog('A new campaign has started.');
-    }
-
-    function getFaction(name) {
-      return game.factions.find(f => f.name === name);
-    }
-
-    function getPlayer() {
-      return getFaction(game.player);
-    }
-
-    function ownedProvinces(owner) {
-      return game.provinces.filter(p => p.owner === owner);
-    }
-
-    function borderTargets(owner) {
-      const provinces = ownedProvinces(owner);
-      const ids = new Set(provinces.map(p => p.id));
-      const targets = new Set();
-      provinces.forEach(p => {
-        neighbors(p.id).forEach(n => {
-          if (!ids.has(n) && game.provinces[n]) targets.add(n);
-        });
-      });
-      return [...targets].map(id => game.provinces[id]);
-    }
-
-    function neighbors(id) {
-      const cols = 6;
-      const rows = 4;
-      const x = id % cols;
-      const y = Math.floor(id / cols);
-      const out = [];
-      [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) out.push(ny * cols + nx);
-      });
-      return out;
-    }
-
-    function addLog(text) {
-      game.log.unshift(`${formatDate()} — ${text}`);
-      game.log = game.log.slice(0, 120);
-      renderLog();
-    }
-
-    function formatDate() {
-      return `${String(game.day).padStart(2,'0')}/${String(game.month).padStart(2,'0')}/${game.year}`;
-    }
-
-    function setSpeed(newSpeed) {
-      speed = newSpeed;
-      document.getElementById('speedLabel').textContent = speed === 0 ? 'Paused' : speed === 1 ? 'Normal' : 'Fast';
-      if (tickTimer) clearInterval(tickTimer);
-      if (speed > 0) {
-        tickTimer = setInterval(gameTick, speed === 1 ? 900 : 350);
+    function setBackground(mode) {
+      if (mode === 'light') {
+        scene.background = new THREE.Color(0xe5e7eb);
+      } else if (mode === 'studio') {
+        scene.background = new THREE.Color(0x0f172a);
+      } else {
+        scene.background = new THREE.Color(0x020617);
       }
     }
 
-    function gameTick() {
-      advanceDate();
-      monthlyEconomy();
-      aiTurn();
-      randomEvents();
-      updateMissions();
-      render();
-    }
-
-    function advanceDate() {
-      game.day += 10;
-      if (game.day > 30) {
-        game.day = 1;
-        game.month += 1;
+    function clearCurrentModel() {
+      if (currentModel) {
+        scene.remove(currentModel);
+        disposeObject(currentModel);
+        currentModel = null;
       }
-      if (game.month > 12) {
-        game.month = 1;
-        game.year += 1;
-        addLog('A new year dawns over the continent.');
+      if (currentWireOverlay) {
+        scene.remove(currentWireOverlay);
+        disposeObject(currentWireOverlay);
+        currentWireOverlay = null;
       }
+      currentMeta = { name: '-', format: '-', size: '-', triangles: '-' };
+      updateMetrics();
     }
 
-    function monthlyEconomy() {
-      game.factions.forEach(f => {
-        const provinces = ownedProvinces(f.name);
-        const tax = provinces.reduce((sum, p) => sum + p.development + p.trade, 0);
-        const manpowerGain = provinces.reduce((sum, p) => sum + p.manpower, 0);
-        f.gold += Math.max(3, Math.floor(tax / 3)) - Math.floor(f.army / 12) - Math.floor(f.navy / 8);
-        f.manpower += Math.max(1, Math.floor(manpowerGain / 4));
-        f.stability = clamp(f.stability + rand(-1, 1), 0, 100);
-        provinces.forEach(p => {
-          p.unrest = clamp(p.unrest + rand(-2, 1), 0, 100);
-          if (p.loot > 0) p.loot -= 1;
-        });
-      });
-    }
-
-    function aiTurn() {
-      game.factions.filter(f => f.ai).forEach(ai => {
-        if (ai.gold > 120 && ai.manpower > 20 && Math.random() < 0.35) {
-          ai.army += rand(2, 5);
-          ai.manpower -= rand(4, 8);
-          ai.gold -= rand(12, 20);
-        }
-
-        if (ai.gold > 90 && Math.random() < 0.2) {
-          ai.tech += 1;
-          ai.gold -= 50;
-          ai.prestige += 3;
-          addLog(`${ai.name} advances its state apparatus to Technology ${ai.tech}.`);
-        }
-
-        const targets = borderTargets(ai.name).filter(p => {
-          const rel = ai.relations[p.owner] ?? 0;
-          return rel < 10;
-        });
-
-        if (targets.length && Math.random() < 0.18) {
-          const target = pick(targets);
-          resolveWar(ai.name, target.owner, target.id, true);
+    function disposeObject(obj) {
+      obj.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
+          else child.material.dispose();
         }
       });
     }
 
-    function randomEvents() {
-      if (Math.random() < 0.14) {
-        const player = getPlayer();
-        const roll = rand(1, 5);
-        if (roll === 1) {
-          player.gold += 35;
-          addLog('A wealthy merchant fleet enriches Albion. +35 gold.');
-        } else if (roll === 2) {
-          player.stability = clamp(player.stability - 8, 0, 100);
-          addLog('Court intrigue spreads unrest. -8 stability.');
-        } else if (roll === 3) {
-          player.manpower += 20;
-          addLog('Rural levies answer the call. +20 manpower.');
-        } else if (roll === 4) {
-          player.prestige += 6;
-          addLog('A diplomatic marriage raises your standing. +6 prestige.');
-        } else {
-          const own = ownedProvinces(game.player);
-          if (own.length) {
-            const p = pick(own);
-            p.development += 1;
-            addLog(`${p.name} prospers after a good harvest. +1 development.`);
+    function applyMaterial(root) {
+      root.traverse((child) => {
+        if (child.isMesh) {
+          child.material = defaultMaterial.clone();
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+    }
+
+    function createWireOverlay(source) {
+      const overlay = source.clone(true);
+      overlay.traverse((child) => {
+        if (child.isMesh) {
+          child.material = wireMaterial.clone();
+        }
+      });
+      return overlay;
+    }
+
+    function centerAndScaleModel(root) {
+      const box = new THREE.Box3().setFromObject(root);
+      const center = new THREE.Vector3();
+      const size = new THREE.Vector3();
+      box.getCenter(center);
+      box.getSize(size);
+
+      root.position.sub(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      if (maxDim > 0) {
+        const targetSize = 2.4;
+        const scale = targetSize / maxDim;
+        root.scale.setScalar(scale);
+      }
+
+      root.position.y += 0.5;
+      return { box, size };
+    }
+
+    function fitCameraToObject(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+      cameraZ *= 1.8;
+
+      camera.position.set(center.x + cameraZ * 0.8, center.y + cameraZ * 0.5, center.z + cameraZ);
+      camera.near = Math.max(0.01, maxDim / 100);
+      camera.far = Math.max(5000, maxDim * 100);
+      camera.updateProjectionMatrix();
+
+      controls.target.copy(center);
+      controls.update();
+    }
+
+    function countTriangles(object) {
+      let triangles = 0;
+      object.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          const geo = child.geometry;
+          if (geo.index) triangles += geo.index.count / 3;
+          else if (geo.attributes.position) triangles += geo.attributes.position.count / 3;
+        }
+      });
+      return Math.round(triangles);
+    }
+
+    function formatSize(sizeVec) {
+      return `${sizeVec.x.toFixed(2)} × ${sizeVec.y.toFixed(2)} × ${sizeVec.z.toFixed(2)}`;
+    }
+
+    function updateMetrics() {
+      document.getElementById('metricName').textContent = currentMeta.name;
+      document.getElementById('metricFormat').textContent = currentMeta.format;
+      document.getElementById('metricSize').textContent = currentMeta.size;
+      document.getElementById('metricTriangles').textContent = currentMeta.triangles;
+    }
+
+    function setRenderMode(mode) {
+      if (!currentModel) return;
+
+      currentModel.traverse((child) => {
+        if (child.isMesh) {
+          if (mode === 'wireframe') {
+            child.material.wireframe = true;
+            child.material.opacity = 1;
+            child.material.transparent = false;
+          } else {
+            child.material.wireframe = false;
+            child.material.opacity = 1;
+            child.material.transparent = false;
           }
         }
+      });
+
+      if (currentWireOverlay) {
+        currentWireOverlay.visible = mode === 'solid-wire';
       }
     }
 
-    function resolveWar(attackerName, defenderName, provinceId, aiInitiated = false) {
-      const attacker = getFaction(attackerName);
-      const defender = getFaction(defenderName);
-      const province = game.provinces[provinceId];
-      if (!attacker || !defender || !province || province.owner !== defenderName) return;
-      if (attacker.army < 5) return;
+    function addModel(root, name, format) {
+      clearCurrentModel();
+      applyMaterial(root);
+      const { size } = centerAndScaleModel(root);
+      currentModel = root;
+      scene.add(currentModel);
 
-      const attackPower = attacker.army + attacker.tech * 3 + rand(0, 12) + Math.floor(attacker.prestige / 10);
-      const defendPower = defender.army + defender.tech * 3 + province.fort * 4 + rand(0, 12) + Math.floor(defender.stability / 20);
+      currentWireOverlay = createWireOverlay(root);
+      currentWireOverlay.visible = false;
+      scene.add(currentWireOverlay);
 
-      const attackLoss = rand(2, 7);
-      const defendLoss = rand(2, 7);
-      attacker.army = Math.max(1, attacker.army - attackLoss);
-      defender.army = Math.max(0, defender.army - defendLoss);
-      attacker.manpower = Math.max(0, attacker.manpower - rand(3, 8));
-      defender.manpower = Math.max(0, defender.manpower - rand(3, 8));
+      fitCameraToObject(currentModel);
+      currentMeta = {
+        name,
+        format,
+        size: formatSize(size),
+        triangles: countTriangles(root).toLocaleString()
+      };
+      updateMetrics();
+      setRenderMode(document.getElementById('renderMode').value);
+      updateStatus(`Loaded ${name} successfully.`);
+    }
 
-      if (attackPower >= defendPower) {
-        province.owner = attackerName;
-        province.unrest = 25;
-        province.loot = 3;
-        attacker.prestige += 8;
-        defender.prestige -= 6;
-        attacker.gold += rand(8, 20);
-        addLog(`${attackerName} defeats ${defenderName} and seizes ${province.name}.`);
-        if (!aiInitiated && attackerName === game.player) {
-          addLog(`Your banners now fly over ${province.name}.`);
+    function loadSTL(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const loader = new STLLoader();
+          const geometry = loader.parse(event.target.result);
+          geometry.computeVertexNormals();
+          const mesh = new THREE.Mesh(geometry, defaultMaterial.clone());
+          const group = new THREE.Group();
+          group.add(mesh);
+          addModel(group, file.name, 'STL');
+        } catch (error) {
+          updateStatus(`Failed to load STL: ${error.message}`, true);
         }
-      } else {
-        attacker.prestige -= 4;
-        defender.prestige += 4;
-        addLog(`${defenderName} repels an invasion in ${province.name}.`);
-      }
-
-      attacker.relations[defenderName] = (attacker.relations[defenderName] ?? 0) - 20;
-      defender.relations[attackerName] = (defender.relations[attackerName] ?? 0) - 20;
+      };
+      reader.readAsArrayBuffer(file);
     }
 
-    function clamp(v, min, max) {
-      return Math.max(min, Math.min(max, v));
+    function loadOBJ(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const loader = new OBJLoader();
+          const object = loader.parse(event.target.result);
+          addModel(object, file.name, 'OBJ');
+        } catch (error) {
+          updateStatus(`Failed to load OBJ: ${error.message}`, true);
+        }
+      };
+      reader.readAsText(file);
     }
 
-    function raiseArmy() {
-      const p = getPlayer();
-      if (p.gold < 20 || p.manpower < 10) return addLog('Not enough gold or manpower to raise more troops.');
-      p.gold -= 20;
-      p.manpower -= 10;
-      p.army += rand(4, 7);
-      addLog('New regiments are raised for the crown.');
-      render();
+    function loadGLTF(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const loader = new GLTFLoader();
+        loader.parse(
+          event.target.result,
+          '',
+          (gltf) => {
+            addModel(gltf.scene, file.name, file.name.toLowerCase().endsWith('.glb') ? 'GLB' : 'GLTF');
+          },
+          (error) => {
+            updateStatus(`Failed to load GLTF/GLB: ${error.message || error}`, true);
+          }
+        );
+      };
+      if (file.name.toLowerCase().endsWith('.glb')) reader.readAsArrayBuffer(file);
+      else reader.readAsText(file);
     }
 
-    function buildShip() {
-      const p = getPlayer();
-      const coastal = ownedProvinces(game.player).some(pr => pr.coastal);
-      if (!coastal) return addLog('You need a coastal province to build ships.');
-      if (p.gold < 18) return addLog('Not enough gold to construct a ship.');
-      p.gold -= 18;
-      p.navy += 1;
-      p.prestige += 1;
-      addLog('A fresh ship joins your navy.');
-      render();
+    function loadDemoCube() {
+      const geometry = new THREE.BoxGeometry(1.4, 0.8, 1.2, 8, 8, 8);
+      const mesh = new THREE.Mesh(geometry, defaultMaterial.clone());
+      const group = new THREE.Group();
+      group.add(mesh);
+      addModel(group, 'Demo Cube', 'Procedural');
     }
 
-    function developProvince() {
-      if (selectedProvinceId == null) return addLog('Select one of your provinces first.');
-      const province = game.provinces[selectedProvinceId];
-      const p = getPlayer();
-      if (province.owner !== game.player) return addLog('You may only develop your own provinces.');
-      const cost = 18 + province.development * 4;
-      if (p.gold < cost) return addLog(`You need ${cost} gold to develop ${province.name}.`);
-      p.gold -= cost;
-      province.development += 1;
-      province.trade += Math.random() < 0.5 ? 1 : 0;
-      province.manpower += Math.random() < 0.5 ? 1 : 0;
-      province.unrest = clamp(province.unrest - 6, 0, 100);
-      addLog(`${province.name} is developed further.`);
-      render();
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const ext = file.name.split('.').pop().toLowerCase();
+      updateStatus(`Loading ${file.name}...`);
+
+      if (ext === 'stl') loadSTL(file);
+      else if (ext === 'obj') loadOBJ(file);
+      else if (ext === 'gltf' || ext === 'glb') loadGLTF(file);
+      else updateStatus('Unsupported file type. Use STL, OBJ, GLTF, or GLB.', true);
+    });
+
+    document.getElementById('loadDemoBtn').addEventListener('click', loadDemoCube);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      clearCurrentModel();
+      updateStatus('Model cleared.');
+    });
+
+    document.getElementById('fitBtn').addEventListener('click', () => {
+      if (currentModel) fitCameraToObject(currentModel);
+    });
+
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      camera.position.set(2.8, 2.2, 3.6);
+      controls.target.set(0, 0.4, 0);
+      controls.update();
+    });
+
+    document.getElementById('renderMode').addEventListener('change', (e) => {
+      setRenderMode(e.target.value);
+    });
+
+    document.getElementById('bgMode').addEventListener('change', (e) => {
+      setBackground(e.target.value);
+    });
+
+    document.getElementById('lightIntensity').addEventListener('input', (e) => {
+      mainLight.intensity = Number(e.target.value);
+    });
+
+    document.getElementById('ambientIntensity').addEventListener('input', (e) => {
+      ambientLight.intensity = Number(e.target.value);
+    });
+
+    document.getElementById('rotateBtn').addEventListener('click', (e) => {
+      controls.autoRotate = !controls.autoRotate;
+      e.target.textContent = `Auto Rotate: ${controls.autoRotate ? 'On' : 'Off'}`;
+    });
+
+    document.getElementById('gridBtn').addEventListener('click', (e) => {
+      grid.visible = !grid.visible;
+      e.target.textContent = `Grid: ${grid.visible ? 'On' : 'Off'}`;
+    });
+
+    function onResize() {
+      const width = canvas.clientWidth || window.innerWidth;
+      const height = canvas.clientHeight || window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
     }
 
-    function researchTech() {
-      const p = getPlayer();
-      const cost = 60 + p.tech * 25;
-      if (p.gold < cost) return addLog(`Technology ${p.tech + 1} requires ${cost} gold.`);
-      p.gold -= cost;
-      p.tech += 1;
-      p.prestige += 4;
-      addLog(`Albion reaches Technology ${p.tech}.`);
-      render();
+    window.addEventListener('resize', onResize);
+    setBackground('dark');
+    updateMetrics();
+    loadDemoCube();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
     }
 
-    function boostStability() {
-      const p = getPlayer();
-      if (p.gold < 30) return addLog('Not enough gold to stabilize the realm.');
-      p.gold -= 30;
-      p.stability = clamp(p.stability + 15, 0, 100);
-      addLog('Royal authority calms the realm.');
-      render();
-    }
-
-    function collectTaxes() {
-      const p = getPlayer();
-      const amount = ownedProvinces(game.player).reduce((sum, pr) => sum + pr.development, 0) + rand(8, 16);
-      p.gold += amount;
-      p.stability = clamp(p.stability - 4, 0, 100);
-      addLog(`Special taxation brings in ${amount} gold, but lowers stability.`);
-      render();
-    }
-
-    function selectProvince(id) {
-      selectedProvinceId = id;
-      renderProvinceInfo();
-      renderMap();
-    }
-
-    function improveRelations(name) {
-      const p = getPlayer();
-      if (p.gold < 15) return addLog('You need 15 gold to send diplomats and gifts.');
-      p.gold -= 15;
-      p.relations[name] = clamp((p.relations[name] ?? 0) + 15, -100, 100);
-      getFaction(name).relations[game.player] = clamp((getFaction(name).relations[game.player] ?? 0) + 10, -100, 100);
-      addLog(`Relations with ${name} improve.`);
-      render();
-    }
-
-    function declareWarOnOwner() {
-      if (selectedProvinceId == null) return addLog('Select a target province first.');
-      const province = game.provinces[selectedProvinceId];
-      if (province.owner === game.player) return addLog('Declaring war on yourself is advanced statecraft, but not useful.');
-      resolveWar(game.player, province.owner, province.id, false);
-      render();
-    }
-
-    function claimProvince() {
-      if (selectedProvinceId == null) return addLog('Select a province first.');
-      const province = game.provinces[selectedProvinceId];
-      const p = getPlayer();
-      if (province.owner === game.player) return addLog('You already own this province.');
-      if (p.gold < 25) return addLog('Fabricating a claim costs 25 gold.');
-      p.gold -= 25;
-      p.prestige += 2;
-      p.relations[province.owner] = (p.relations[province.owner] ?? 0) - 10;
-      addLog(`A dubious legal case is assembled to claim ${province.name}.`);
-      render();
-    }
-
-    function updateMissions() {
-      const p = getPlayer();
-      game.missions.forEach(m => {
-        if (m.id === 'own8' && ownedProvinces(game.player).length >= 8) m.done = true;
-        if (m.id === 'tech3' && p.tech >= 3) m.done = true;
-        if (m.id === 'prestige50' && p.prestige >= 50) m.done = true;
-      });
-    }
-
-    function render() {
-      const p = getPlayer();
-      document.getElementById('dateLabel').textContent = formatDate();
-      document.getElementById('nationName').textContent = p.name;
-      document.getElementById('government').textContent = p.government;
-      document.getElementById('gold').textContent = p.gold;
-      document.getElementById('manpower').textContent = p.manpower;
-      document.getElementById('army').textContent = p.army;
-      document.getElementById('navy').textContent = p.navy;
-      document.getElementById('stability').textContent = p.stability;
-      document.getElementById('prestige').textContent = p.prestige;
-      document.getElementById('tech').textContent = p.tech;
-      document.getElementById('ownedCount').textContent = ownedProvinces(game.player).length;
-      renderLegend();
-      renderMap();
-      renderProvinceInfo();
-      renderLog();
-      renderFactions();
-      renderMissions();
-    }
-
-    function renderLegend() {
-      const legend = document.getElementById('legend');
-      legend.innerHTML = '';
-      game.factions.forEach(f => {
-        const el = document.createElement('div');
-        el.className = 'badge';
-        el.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[f.name]};margin-right:6px;"></span>${f.name}`;
-        legend.appendChild(el);
-      });
-    }
-
-    function renderMap() {
-      const map = document.getElementById('map');
-      map.innerHTML = '';
-      game.provinces.forEach(province => {
-        const div = document.createElement('div');
-        div.className = 'province' + (selectedProvinceId === province.id ? ' selected' : '');
-        div.style.background = COLORS[province.owner] || '#64748b';
-        div.innerHTML = `<div>${province.name}</div><div class="small">Dev ${province.development} • ${province.owner}</div>`;
-        div.onclick = () => selectProvince(province.id);
-        map.appendChild(div);
-      });
-    }
-
-    function renderProvinceInfo() {
-      const box = document.getElementById('provinceInfo');
-      if (selectedProvinceId == null) {
-        box.innerHTML = 'Select a province on the map.';
-        return;
-      }
-      const p = game.provinces[selectedProvinceId];
-      const isOwned = p.owner === game.player;
-      box.innerHTML = `
-        <div class="faction-item">
-          <div style="font-size:20px;font-weight:700;">${p.name}</div>
-          <div style="color:var(--muted);margin-top:4px;">Owner: <b>${p.owner}</b></div>
-          <div style="margin-top:8px;">Development: <b>${p.development}</b> • Trade: <b>${p.trade}</b> • Manpower: <b>${p.manpower}</b></div>
-          <div style="margin-top:6px;">Fort: <b>${p.fort}</b> • Coastal: <b>${p.coastal ? 'Yes' : 'No'}</b></div>
-          <div style="margin-top:6px;">Unrest: <b>${p.unrest}</b></div>
-          <div class="progress"><div style="width:${clamp(100 - p.unrest, 0, 100)}%"></div></div>
-          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button onclick="${isOwned ? 'developProvince()' : 'claimProvince()'}">${isOwned ? 'Develop' : 'Fabricate Claim'}</button>
-            <button onclick="${isOwned ? 'boostStability()' : 'declareWarOnOwner()'}">${isOwned ? 'Pacify Realm' : 'Invade Province'}</button>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderLog() {
-      const log = document.getElementById('log');
-      log.innerHTML = game.log.map(entry => `<div class="log-entry">${entry}</div>`).join('');
-    }
-
-    function renderFactions() {
-      const list = document.getElementById('factionList');
-      const player = getPlayer();
-      list.innerHTML = '';
-      game.factions.filter(f => f.name !== game.player).forEach(f => {
-        const rel = player.relations[f.name] ?? 0;
-        const provinces = ownedProvinces(f.name).length;
-        const div = document.createElement('div');
-        div.className = 'faction-item';
-        div.innerHTML = `
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
-            <div>
-              <div style="font-weight:700;">${f.name}</div>
-              <div style="color:var(--muted);font-size:12px;">${f.government} • ${provinces} provinces</div>
-            </div>
-            <div class="${rel >= 0 ? 'good' : 'bad'}">${rel}</div>
-          </div>
-          <div style="margin-top:6px;font-size:13px;">Army ${f.army} • Navy ${f.navy} • Tech ${f.tech}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-            <button onclick="improveRelations('${f.name.replace(/'/g, "\\'")}')">Improve Relations</button>
-            <button onclick="selectEnemyProvince('${f.name.replace(/'/g, "\\'")}')">Find Border Target</button>
-          </div>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    function selectEnemyProvince(name) {
-      const targets = borderTargets(game.player).filter(p => p.owner === name);
-      if (!targets.length) return addLog(`No bordering province from ${name} is currently available.`);
-      const target = pick(targets);
-      selectedProvinceId = target.id;
-      addLog(`Map centered in your mind on ${target.name}, a province of ${name}.`);
-      render();
-    }
-
-    function renderMissions() {
-      const missions = document.getElementById('missions');
-      missions.innerHTML = '';
-      game.missions.forEach(m => {
-        const el = document.createElement('div');
-        el.className = 'mission-item';
-        el.innerHTML = `<div style="font-weight:700;">${m.done ? '✅' : '⬜'} ${m.text}</div>`;
-        missions.appendChild(el);
-      });
-    }
-
-    function saveGame() {
-      localStorage.setItem('miniUniversalisSave', JSON.stringify(game));
-      addLog('Game saved to localStorage.');
-    }
-
-    function loadGame() {
-      const raw = localStorage.getItem('miniUniversalisSave');
-      if (!raw) return addLog('No save file found in localStorage.');
-      try {
-        game = JSON.parse(raw);
-        addLog('Save loaded successfully.');
-        render();
-      } catch (err) {
-        alert('Save file could not be loaded.');
-      }
-    }
-
-    document.getElementById('pauseBtn').onclick = () => setSpeed(0);
-    document.getElementById('playBtn').onclick = () => setSpeed(1);
-    document.getElementById('fastBtn').onclick = () => setSpeed(2);
-    document.getElementById('saveBtn').onclick = saveGame;
-    document.getElementById('loadBtn').onclick = loadGame;
-    document.getElementById('resetBtn').onclick = () => {
-      if (confirm('Start a new game?')) createNewGame();
-    };
-
-    createNewGame();
+    animate();
   </script>
 </body>
 </html>
