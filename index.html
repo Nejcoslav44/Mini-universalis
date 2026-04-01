@@ -1,583 +1,296 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Photogrammetry Capture for SolidWorks</title>
+  <title>Kalkulator specifične toplote</title>
   <style>
     :root {
-      --bg: #08111f;
-      --panel: rgba(15, 23, 42, 0.92);
-      --panel-2: rgba(30, 41, 59, 0.9);
-      --border: rgba(255,255,255,0.12);
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --accent: #3b82f6;
-      --good: #10b981;
-      --warn: #f59e0b;
-      --danger: #ef4444;
+      --bg: #0f172a;
+      --card: #111827;
+      --card2: #1f2937;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #38bdf8;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --border: #334155;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
     body {
       margin: 0;
-      font-family: Inter, Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #111827, #1e293b);
       color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 30%),
-        radial-gradient(circle at top right, rgba(16,185,129,0.12), transparent 25%),
-        linear-gradient(160deg, #020617 0%, #0f172a 55%, #111827 100%);
       min-height: 100vh;
+      padding: 24px;
     }
-    .app {
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .formula {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 18px 0 24px;
+      overflow-x: auto;
+      font-size: 1.05rem;
+    }
+
+    .grid {
       display: grid;
-      grid-template-columns: 380px 1fr;
-      min-height: 100vh;
-    }
-    .sidebar {
-      padding: 18px;
-      border-right: 1px solid var(--border);
-      background: rgba(2, 6, 23, 0.8);
-      backdrop-filter: blur(12px);
-      overflow-y: auto;
-    }
-    .main {
-      padding: 18px;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 16px;
     }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 16px;
-      box-shadow: 0 14px 38px rgba(0,0,0,0.25);
-      margin-bottom: 16px;
-    }
-    h1 { margin: 0 0 8px; font-size: 1.5rem; }
-    h2 { margin: 0 0 12px; font-size: 1rem; }
-    p, li, label, button, select, input { font-size: 0.95rem; line-height: 1.45; }
-    .muted { color: var(--muted); }
-    .row { display: grid; gap: 10px; margin-bottom: 12px; }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    button, select, input[type="number"] {
-      width: 100%;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
-      color: var(--text);
-      padding: 11px 12px;
-      border-radius: 12px;
-    }
-    button { cursor: pointer; transition: .2s ease; }
-    button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.22); }
-    button.primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
-    button.good { background: linear-gradient(135deg, #059669, #047857); }
-    button.warn { background: linear-gradient(135deg, #b45309, #92400e); }
-    button.danger { background: linear-gradient(135deg, #b91c1c, #991b1b); }
-    .viewer-card {
-      position: relative;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      overflow: hidden;
-      min-height: 420px;
-    }
-    video, canvas#overlay {
+
+    label {
       display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .field {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    input {
       width: 100%;
-      height: min(72vh, 820px);
-      background: #000;
-      object-fit: cover;
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      background: #0b1220;
+      color: white;
+      font-size: 1rem;
     }
-    #overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-    .topbar {
+
+    .buttons {
       display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
       flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
     }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
-      color: var(--muted);
-      font-size: 0.85rem;
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
     }
-    .status {
-      padding: 12px 14px;
+
+    .calc-btn {
+      background: var(--accent);
+      color: #001018;
+    }
+
+    .clear-btn {
+      background: #374151;
+      color: white;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .result {
+      margin-top: 24px;
+      padding: 18px;
       border-radius: 14px;
+      background: #0b1220;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,0.04);
-      color: var(--muted);
+    }
+
+    .value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin: 10px 0;
+      color: var(--good);
+    }
+
+    .error {
+      color: var(--bad);
+      font-weight: bold;
       margin-top: 10px;
-      word-break: break-word;
     }
-    .thumb-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      gap: 10px;
-      max-height: 320px;
-      overflow-y: auto;
+
+    .small {
+      color: var(--muted);
+      font-size: 0.95rem;
     }
-    .thumb {
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #020617;
-      aspect-ratio: 1 / 1;
+
+    .footer-note {
+      margin-top: 18px;
+      font-size: 0.92rem;
+      color: var(--muted);
     }
-    .thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .thumb span {
-      position: absolute;
-      left: 6px;
-      bottom: 6px;
-      font-size: 0.75rem;
-      padding: 3px 6px;
-      border-radius: 999px;
-      background: rgba(2,6,23,0.78);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .metrics {
-      display: grid;
-      gap: 8px;
-    }
-    .metric {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 9px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .metric:last-child { border-bottom: none; }
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .tips { margin: 0; padding-left: 18px; color: var(--muted); }
-    .pill-active { color: #d1fae5; border-color: rgba(16,185,129,0.4); }
-    .warning-box {
-      border: 1px solid rgba(245,158,11,0.35);
-      background: rgba(245,158,11,0.08);
-      color: #fde68a;
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-top: 12px;
-    }
-    @media (max-width: 980px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
-      video, canvas#overlay { height: 56vh; }
+
+    code {
+      color: #7dd3fc;
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="card">
-        <h1>Photogrammetry Capture</h1>
-        <p class="muted">This site uses your phone camera to capture a full image set for a chair or other object. It does <strong>not</strong> build a SolidWorks-ready mesh in pure browser code; instead it gives you a clean capture workflow and exports your image set so you can reconstruct the mesh in photogrammetry software.</p>
-        <div class="warning-box">
-          Browser-only HTML is great for <strong>capture</strong>. High-quality mesh reconstruction still normally needs a dedicated engine such as RealityCapture, Meshroom, COLMAP, Polycam, or RealityScan.
+  <div class="wrap">
+    <div class="card">
+      <h1>Kalkulator specifične toplote vzorca</h1>
+      <p>
+        Formula za vajo:
+      </p>
+
+      <div class="formula">
+        c<sub>p</sub> =
+        <span>
+          [ m<sub>vode</sub> · c<sub>vode</sub> · (T<sub>vode</sub> - T<sub>zmes</sub>) ]
+          /
+          [ m<sub>vzorec</sub> · (T<sub>zmes</sub> - T<sub>vzorec</sub>) ]
+        </span>
+      </div>
+
+      <p>
+        <strong>Opomba:</strong> mase vnašaj v <strong>kg</strong>, temperature pa v <strong>°C</strong>.
+        Specifična toplota vode je nastavljena na <strong>4180 J/(kg·K)</strong>.
+      </p>
+
+      <div class="grid">
+        <div class="field">
+          <label for="mVzorec">Masa vzorca, m<sub>vzorec</sub> (kg)</label>
+          <input type="number" id="mVzorec" step="any" placeholder="npr. 0.125" />
+        </div>
+
+        <div class="field">
+          <label for="tVzorec">Temperatura vzorca, T<sub>vzorec</sub> (°C)</label>
+          <input type="number" id="tVzorec" step="any" placeholder="npr. 22" />
+        </div>
+
+        <div class="field">
+          <label for="tVode">Temperatura vode, T<sub>vode</sub> (°C)</label>
+          <input type="number" id="tVode" step="any" placeholder="npr. 98" />
+        </div>
+
+        <div class="field">
+          <label for="mVode">Masa vode, m<sub>vode</sub> (kg)</label>
+          <input type="number" id="mVode" step="any" placeholder="npr. 0.080" />
+        </div>
+
+        <div class="field">
+          <label for="tZmes">Zmesna temperatura, T<sub>zmes</sub> (°C)</label>
+          <input type="number" id="tZmes" step="any" placeholder="npr. 35" />
         </div>
       </div>
 
-      <div class="card">
-        <h2>Camera Setup</h2>
-        <div class="row">
-          <label for="cameraSelect">Camera</label>
-          <select id="cameraSelect"></select>
-        </div>
-        <div class="two-col">
-          <button id="startBtn" class="primary">Start Camera</button>
-          <button id="stopBtn">Stop Camera</button>
-        </div>
-        <div class="three-col">
-          <button id="switchFacingBtn">Rear Cam</button>
-          <button id="guideBtn">Guide: On</button>
-          <button id="flashBtn">Flash: Off</button>
-        </div>
-        <div class="status" id="status">Camera not started.</div>
+      <div class="buttons">
+        <button class="calc-btn" onclick="izracunaj()">Izračunaj cₚ</button>
+        <button class="clear-btn" onclick="pobrisi()">Počisti</button>
       </div>
 
-      <div class="card">
-        <h2>Capture Control</h2>
-        <div class="row">
-          <label for="captureCount">Target photo count</label>
-          <input id="captureCount" type="number" min="20" max="600" value="120" />
-        </div>
-        <div class="row">
-          <label for="intervalMs">Auto-capture interval (ms)</label>
-          <input id="intervalMs" type="number" min="400" max="5000" value="1200" />
-        </div>
-        <div class="two-col">
-          <button id="captureBtn" class="good">Capture One</button>
-          <button id="autoBtn" class="warn">Start Auto</button>
-        </div>
-        <div class="two-col">
-          <button id="downloadJsonBtn">Download Metadata</button>
-          <button id="clearBtn" class="danger">Clear Photos</button>
-        </div>
+      <div class="result">
+        <div><strong>Rezultat:</strong></div>
+        <div id="rezultat" class="value">—</div>
+        <div id="razlaga" class="small">Vnesi podatke in klikni “Izračunaj cₚ”.</div>
+        <div id="napaka" class="error"></div>
       </div>
 
-      <div class="card">
-        <h2>Session Stats</h2>
-        <div class="metrics">
-          <div class="metric"><span>Photos captured</span><strong id="mPhotos">0</strong></div>
-          <div class="metric"><span>Target reached</span><strong id="mTarget">No</strong></div>
-          <div class="metric"><span>Recommended rings</span><strong>3</strong></div>
-          <div class="metric"><span>Capture mode</span><strong id="mMode">Manual</strong></div>
-        </div>
+      <div class="footer-note">
+        Namig: če meriš mase v gramih, jih prej pretvori v kilograme:
+        <code>g / 1000 = kg</code>
       </div>
-
-      <div class="card">
-        <h2>How To Scan a Chair</h2>
-        <ol class="tips">
-          <li>Keep the chair still and use even light.</li>
-          <li>Make one full circle at seat height.</li>
-          <li>Make a second circle slightly above, angled down.</li>
-          <li>Make a third circle slightly below, angled up.</li>
-          <li>Keep 70% overlap between shots.</li>
-          <li>Take extra close shots of seams and cushion edges.</li>
-        </ol>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="topbar">
-        <div>
-          <div class="badge" id="sessionBadge">Ready for capture</div>
-        </div>
-        <div class="badge">Best use: phone in portrait, rear camera, slow circular motion</div>
-      </div>
-
-      <div class="viewer-card">
-        <video id="video" playsinline autoplay muted></video>
-        <canvas id="overlay"></canvas>
-      </div>
-
-      <div class="card">
-        <div class="footer">
-          <div>
-            <h2 style="margin-bottom:6px;">Captured Frames</h2>
-            <p class="muted" style="margin:0;">Long-press or right-click any thumbnail to save manually. Metadata export includes capture order and timestamps.</p>
-          </div>
-        </div>
-        <div class="thumb-grid" id="thumbGrid"></div>
-      </div>
-    </main>
+    </div>
   </div>
 
   <script>
-    const video = document.getElementById('video');
-    const overlay = document.getElementById('overlay');
-    const ctx = overlay.getContext('2d');
-    const cameraSelect = document.getElementById('cameraSelect');
-    const statusEl = document.getElementById('status');
-    const thumbGrid = document.getElementById('thumbGrid');
-    const sessionBadge = document.getElementById('sessionBadge');
+    function izracunaj() {
+      const cVode = 4180;
 
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const switchFacingBtn = document.getElementById('switchFacingBtn');
-    const guideBtn = document.getElementById('guideBtn');
-    const flashBtn = document.getElementById('flashBtn');
-    const captureBtn = document.getElementById('captureBtn');
-    const autoBtn = document.getElementById('autoBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+      const mVzorec = parseFloat(document.getElementById("mVzorec").value);
+      const tVzorec = parseFloat(document.getElementById("tVzorec").value);
+      const tVode = parseFloat(document.getElementById("tVode").value);
+      const mVode = parseFloat(document.getElementById("mVode").value);
+      const tZmes = parseFloat(document.getElementById("tZmes").value);
 
-    const captureCountInput = document.getElementById('captureCount');
-    const intervalMsInput = document.getElementById('intervalMs');
+      const rezultat = document.getElementById("rezultat");
+      const razlaga = document.getElementById("razlaga");
+      const napaka = document.getElementById("napaka");
 
-    const mPhotos = document.getElementById('mPhotos');
-    const mTarget = document.getElementById('mTarget');
-    const mMode = document.getElementById('mMode');
+      napaka.textContent = "";
+      rezultat.textContent = "—";
+      razlaga.textContent = "";
 
-    let stream = null;
-    let currentDeviceId = '';
-    let useRear = true;
-    let torchEnabled = false;
-    let guideEnabled = true;
-    let autoTimer = null;
-    let capturedFrames = [];
-
-    function setStatus(message, error = false) {
-      statusEl.textContent = message;
-      statusEl.style.color = error ? '#fecaca' : '#94a3b8';
-      sessionBadge.textContent = message;
-      sessionBadge.classList.toggle('pill-active', !error);
-    }
-
-    function updateMetrics() {
-      mPhotos.textContent = capturedFrames.length;
-      mTarget.textContent = capturedFrames.length >= Number(captureCountInput.value || 0) ? 'Yes' : 'No';
-    }
-
-    async function listCameras() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cams = devices.filter(d => d.kind === 'videoinput');
-      cameraSelect.innerHTML = '';
-      cams.forEach((cam, index) => {
-        const opt = document.createElement('option');
-        opt.value = cam.deviceId;
-        opt.textContent = cam.label || `Camera ${index + 1}`;
-        cameraSelect.appendChild(opt);
-      });
-
-      if (!currentDeviceId && cams.length) {
-        const rearCam = cams.find(c => /back|rear|environment/i.test(c.label));
-        currentDeviceId = rearCam ? rearCam.deviceId : cams[0].deviceId;
-        cameraSelect.value = currentDeviceId;
-      }
-    }
-
-    async function startCamera() {
-      try {
-        stopCamera();
-        const constraints = {
-          audio: false,
-          video: currentDeviceId ? {
-            deviceId: { exact: currentDeviceId },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          } : {
-            facingMode: useRear ? { ideal: 'environment' } : 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
-        };
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        await video.play();
-        resizeOverlay();
-        await listCameras();
-        setStatus('Camera running. Move slowly around the object.');
-      } catch (err) {
-        setStatus('Could not start camera: ' + err.message, true);
-      }
-    }
-
-    function stopCamera() {
-      if (autoTimer) {
-        clearInterval(autoTimer);
-        autoTimer = null;
-      }
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        stream = null;
-      }
-      mMode.textContent = 'Manual';
-    }
-
-    function resizeOverlay() {
-      overlay.width = video.clientWidth * window.devicePixelRatio;
-      overlay.height = video.clientHeight * window.devicePixelRatio;
-      drawGuide();
-    }
-
-    function drawGuide() {
-      if (!overlay.width || !overlay.height) return;
-      ctx.clearRect(0, 0, overlay.width, overlay.height);
-      if (!guideEnabled) return;
-
-      const w = overlay.width;
-      const h = overlay.height;
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-      ctx.lineWidth = 2 * window.devicePixelRatio;
-      ctx.setLineDash([12 * window.devicePixelRatio, 10 * window.devicePixelRatio]);
-
-      const padX = w * 0.18;
-      const padY = h * 0.12;
-      const rectW = w - padX * 2;
-      const rectH = h - padY * 2;
-      ctx.strokeRect(padX, padY, rectW, rectH);
-
-      ctx.setLineDash([]);
-      ctx.strokeStyle = 'rgba(59,130,246,0.85)';
-      ctx.beginPath();
-      ctx.moveTo(w / 2, padY);
-      ctx.lineTo(w / 2, h - padY);
-      ctx.moveTo(padX, h / 2);
-      ctx.lineTo(w - padX, h / 2);
-      ctx.stroke();
-
-      ctx.fillStyle = 'rgba(2,6,23,0.7)';
-      ctx.fillRect(18 * window.devicePixelRatio, 18 * window.devicePixelRatio, 500 * window.devicePixelRatio, 64 * window.devicePixelRatio);
-      ctx.fillStyle = 'white';
-      ctx.font = `${18 * window.devicePixelRatio}px Arial`;
-      ctx.fillText('Keep the chair inside the box and overlap the last view by ~70%', 32 * window.devicePixelRatio, 56 * window.devicePixelRatio);
-    }
-
-    function captureFrame() {
-      if (!stream || video.readyState < 2) {
-        setStatus('Start the camera first.', true);
+      if (
+        isNaN(mVzorec) || isNaN(tVzorec) || isNaN(tVode) ||
+        isNaN(mVode) || isNaN(tZmes)
+      ) {
+        napaka.textContent = "Izpolni vsa polja.";
         return;
       }
 
-      const canvas = document.createElement('canvas');
-      const width = video.videoWidth || 1280;
-      const height = video.videoHeight || 720;
-      canvas.width = width;
-      canvas.height = height;
-      const c = canvas.getContext('2d');
-      c.drawImage(video, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-
-      const item = {
-        id: capturedFrames.length + 1,
-        timestamp: new Date().toISOString(),
-        width,
-        height,
-        dataUrl
-      };
-      capturedFrames.push(item);
-      addThumb(item);
-      updateMetrics();
-      setStatus(`Captured frame ${item.id}. Keep moving slowly around the object.`);
-    }
-
-    function addThumb(item) {
-      const box = document.createElement('div');
-      box.className = 'thumb';
-
-      const img = document.createElement('img');
-      img.src = item.dataUrl;
-      img.alt = `Frame ${item.id}`;
-      img.title = `Frame ${item.id}`;
-
-      const label = document.createElement('span');
-      label.textContent = `#${item.id}`;
-
-      box.appendChild(img);
-      box.appendChild(label);
-      thumbGrid.prepend(box);
-    }
-
-    function clearFrames() {
-      capturedFrames = [];
-      thumbGrid.innerHTML = '';
-      updateMetrics();
-      setStatus('All captured frames cleared.');
-    }
-
-    function toggleAutoCapture() {
-      if (autoTimer) {
-        clearInterval(autoTimer);
-        autoTimer = null;
-        autoBtn.textContent = 'Start Auto';
-        mMode.textContent = 'Manual';
-        setStatus('Auto-capture stopped.');
+      if (mVzorec <= 0 || mVode <= 0) {
+        napaka.textContent = "Masi morata biti večji od 0.";
         return;
       }
 
-      const interval = Math.max(400, Number(intervalMsInput.value || 1200));
-      autoTimer = setInterval(() => {
-        captureFrame();
-        if (capturedFrames.length >= Number(captureCountInput.value || 120)) {
-          toggleAutoCapture();
-          setStatus('Target photo count reached. You can stop and reconstruct the mesh.', false);
-        }
-      }, interval);
-      autoBtn.textContent = 'Stop Auto';
-      mMode.textContent = 'Auto';
-      setStatus('Auto-capture running. Walk slowly in a ring around the object.');
-    }
+      const deltaVoda = tVode - tZmes;
+      const deltaVzorec = tZmes - tVzorec;
 
-    async function toggleTorch() {
-      if (!stream) {
-        setStatus('Start the camera first.', true);
+      if (deltaVoda <= 0) {
+        napaka.textContent = "Mora veljati: T_vode > T_zmes.";
         return;
       }
-      const track = stream.getVideoTracks()[0];
-      const caps = track.getCapabilities ? track.getCapabilities() : {};
-      if (!caps.torch) {
-        setStatus('Torch is not available on this device/browser.', true);
+
+      if (deltaVzorec <= 0) {
+        napaka.textContent = "Mora veljati: T_zmes > T_vzorec.";
         return;
       }
-      torchEnabled = !torchEnabled;
-      try {
-        await track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
-        flashBtn.textContent = `Flash: ${torchEnabled ? 'On' : 'Off'}`;
-      } catch (err) {
-        setStatus('Could not change torch: ' + err.message, true);
-      }
+
+      const cp = (mVode * cVode * deltaVoda) / (mVzorec * deltaVzorec);
+
+      rezultat.textContent = cp.toFixed(2) + " J/(kg·K)";
+      razlaga.textContent =
+        "Izračunano z uporabo c_vode = 4180 J/(kg·K).";
     }
 
-    function downloadMetadata() {
-      if (!capturedFrames.length) {
-        setStatus('No captured frames to export.', true);
-        return;
-      }
-      const metadata = {
-        createdAt: new Date().toISOString(),
-        targetCount: Number(captureCountInput.value || 120),
-        actualCount: capturedFrames.length,
-        notes: 'Image data omitted from JSON. Save thumbnails manually or extend this file with JSZip to package images.',
-        frames: capturedFrames.map(({ id, timestamp, width, height }) => ({ id, timestamp, width, height }))
-      };
-      const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'photogrammetry_capture_metadata.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
+    function pobrisi() {
+      document.getElementById("mVzorec").value = "";
+      document.getElementById("tVzorec").value = "";
+      document.getElementById("tVode").value = "";
+      document.getElementById("mVode").value = "";
+      document.getElementById("tZmes").value = "";
+      document.getElementById("rezultat").textContent = "—";
+      document.getElementById("razlaga").textContent = "Vnesi podatke in klikni “Izračunaj cₚ”.";
+      document.getElementById("napaka").textContent = "";
     }
-
-    startBtn.addEventListener('click', startCamera);
-    stopBtn.addEventListener('click', () => {
-      stopCamera();
-      setStatus('Camera stopped.');
-    });
-
-    switchFacingBtn.addEventListener('click', async () => {
-      useRear = !useRear;
-      currentDeviceId = '';
-      switchFacingBtn.textContent = useRear ? 'Rear Cam' : 'Front Cam';
-      await startCamera();
-    });
-
-    cameraSelect.addEventListener('change', async (e) => {
-      currentDeviceId = e.target.value;
-      await startCamera();
-    });
-
-    guideBtn.addEventListener('click', () => {
-      guideEnabled = !guideEnabled;
-      guideBtn.textContent = `Guide: ${guideEnabled ? 'On' : 'Off'}`;
-      drawGuide();
-    });
-
-    flashBtn.addEventListener('click', toggleTorch);
-    captureBtn.addEventListener('click', captureFrame);
-    autoBtn.addEventListener('click', toggleAutoCapture);
-    clearBtn.addEventListener('click', clearFrames);
-    downloadJsonBtn.addEventListener('click', downloadMetadata);
-
-    window.addEventListener('resize', resizeOverlay);
-    navigator.mediaDevices?.addEventListener?.('devicechange', listCameras);
-
-    updateMetrics();
-    listCameras().catch(() => {});
-    setStatus('Ready. Start the camera and capture a full ring around the chair.');
   </script>
 </body>
 </html>
